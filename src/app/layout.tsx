@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://coldmailer.com",
+    url: "https://coldmailer.me",
     title: "ColdMailer - Automate Your Email Outreach",
     description: "Send personalized emails to multiple recipients efficiently. Perfect for job seekers, freelancers, and marketers.",
     siteName: "ColdMailer",
