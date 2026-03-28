@@ -37,7 +37,7 @@ export function MobileNav() {
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <Zap className="w-5 h-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold">MailFlow</span>
+          <span className="text-lg font-bold">ColdMailer</span>
         </div>
         
         <Sheet open={open} onOpenChange={setOpen}>

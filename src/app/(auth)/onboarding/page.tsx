@@ -73,7 +73,7 @@ export default function OnboardingPage() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">MailFlow</span>
+            <span className="text-xl font-bold">ColdMailer</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard")}>
             Skip for now
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
                 </div>
                 <CardTitle className="text-2xl">Connect your Gmail account</CardTitle>
                 <CardDescription className="text-base">
-                  MailFlow needs access to send emails on your behalf. Your credentials are encrypted and secure.
+                  ColdMailer needs access to send emails on your behalf. Your credentials are encrypted and secure.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

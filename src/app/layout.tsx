@@ -7,25 +7,37 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'MailFlow - Email Automation Platform',
+  title: 'ColdMailer - Email Automation Platform',
   description: 'Send personalized emails to multiple recipients efficiently. Perfect for job applications and outreach.',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+  keywords: [
+    "Cold Email", "Email Automation", "Job Application Automated", 
+    "Mass Email", "Sales Outreach", "Networking", "ColdMailer"
+  ],
+  authors: [{ name: "ColdMailer Team" }],
+  creator: "ColdMailer",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://coldmailer.com",
+    title: "ColdMailer - Automate Your Email Outreach",
+    description: "Send personalized emails to multiple recipients efficiently. Perfect for job seekers, freelancers, and marketers.",
+    siteName: "ColdMailer",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ColdMailer - Automate Your Email Outreach",
+    description: "Send personalized emails to multiple recipients efficiently.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 }
 

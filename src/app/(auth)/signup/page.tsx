@@ -35,7 +35,7 @@ export default function SignupPage() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Zap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold">MailFlow</span>
+            <span className="text-2xl font-bold">ColdMailer</span>
           </div>
         </div>
         
@@ -45,7 +45,7 @@ export default function SignupPage() {
               Start your email automation journey
             </h1>
             <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-              Join thousands of professionals who save hours every week with MailFlow.
+              Join thousands of professionals who save hours every week with ColdMailer.
             </p>
           </div>
           
@@ -79,14 +79,14 @@ export default function SignupPage() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Zap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold">MailFlow</span>
+            <span className="text-2xl font-bold">ColdMailer</span>
           </div>
 
           <Card className="border-0 shadow-none lg:border lg:shadow-sm">
             <CardHeader className="space-y-1 text-center lg:text-left">
               <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
               <CardDescription>
-                Get started with MailFlow in seconds
+                Get started with ColdMailer in seconds
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

@@ -208,7 +208,7 @@ export default function SettingsPage() {
             Appearance
           </CardTitle>
           <CardDescription>
-            Customize how MailFlow looks on your device
+            Customize how ColdMailer looks on your device
           </CardDescription>
         </CardHeader>
         <CardContent>

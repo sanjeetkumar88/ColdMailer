@@ -29,7 +29,7 @@ export default function LoginPage() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Zap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold">MailFlow</span>
+            <span className="text-2xl font-bold">ColdMailer</span>
           </div>
         </div>
         
@@ -68,7 +68,7 @@ export default function LoginPage() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Zap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold">MailFlow</span>
+            <span className="text-2xl font-bold">ColdMailer</span>
           </div>
 
           <Card className="border-0 shadow-none lg:border lg:shadow-sm">

@@ -17,7 +17,7 @@ export default function HomePage() {
               <Mail className="h-6 w-6 text-primary" />
             </div>
             <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-              MailFlow
+              ColdMailer
             </span>
           </div>
           <nav className="flex items-center gap-4">
@@ -55,7 +55,7 @@ export default function HomePage() {
             </h1>
             
             <p className="mx-auto max-w-2xl text-lg sm:text-xl text-muted-foreground mb-10 leading-relaxed">
-              MailFlow gives you the power to send highly personalized, scalable campaigns. 
+              ColdMailer gives you the power to send highly personalized, scalable campaigns. 
               Perfect for job applications, networking, and cold sales outreach.
             </p>
             
@@ -100,7 +100,7 @@ export default function HomePage() {
                 {
                   icon: <Send className="h-10 w-10 text-purple-500" />,
                   title: "Automated Dispatch",
-                  description: "Schedule your campaigns and let MailFlow handle rate-limits and delivery automatically."
+                  description: "Schedule your campaigns and let ColdMailer handle rate-limits and delivery automatically."
                 }
               ].map((feature, idx) => (
                 <Card key={idx} className="group relative overflow-hidden border-border/50 bg-background/50 backdrop-blur-sm transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2">
@@ -131,7 +131,7 @@ export default function HomePage() {
           <div className="container mx-auto px-4 sm:px-6">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-6">Why MailFlow Matters Today</h2>
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-6">Why ColdMailer Matters Today</h2>
                 <div className="space-y-6 text-lg text-muted-foreground">
                   <p>
                     In today's highly competitive job market and fast-paced business world, standing out requires <strong>volume without losing personalization.</strong>
@@ -186,7 +186,7 @@ export default function HomePage() {
           <div className="container mx-auto px-4 sm:px-6 text-center relative z-10">
             <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-6">Ready to automate your success?</h2>
             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Join the growing number of professionals using MailFlow to secure jobs, close deals, and build networks.
+              Join the growing number of professionals using ColdMailer to secure jobs, close deals, and build networks.
             </p>
             <Link href="/login">
               <Button size="lg" className="rounded-full text-lg h-14 px-8 shadow-2xl shadow-primary/30 hover:scale-105 transition-all">
@@ -203,10 +203,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-muted-foreground" />
-            <span className="font-semibold text-muted-foreground">MailFlow</span>
+            <span className="font-semibold text-muted-foreground">ColdMailer</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MailFlow Platform. All rights reserved.
+            © {new Date().getFullYear()} ColdMailer Platform. All rights reserved.
           </p>
         </div>
       </footer>
