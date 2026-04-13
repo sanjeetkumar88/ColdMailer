@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { 
-  Send, 
-  X, 
-  Plus, 
-  Paperclip, 
-  Eye, 
+import {
+  Send,
+  X,
+  Plus,
+  Paperclip,
+  Eye,
   FileText,
   Upload,
   Trash2,
@@ -165,8 +165,8 @@ export default function SendEmailPage() {
                 <Button variant="outline" className="w-full justify-between">
                   <span className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    {selectedTemplate 
-                      ? templates.find(t => t.id === selectedTemplate)?.name 
+                    {selectedTemplate
+                      ? templates.find(t => t.id === selectedTemplate)?.name
                       : "Select a template"}
                   </span>
                   <ChevronDown className="w-4 h-4 opacity-50" />
@@ -174,7 +174,7 @@ export default function SendEmailPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                 {templates.map((template) => (
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     key={template.id}
                     onClick={() => handleTemplateSelect(template.id)}
                     className="flex items-center justify-between"
@@ -254,7 +254,7 @@ export default function SendEmailPage() {
             {attachments.length > 0 && (
               <div className="space-y-2 mb-3">
                 {attachments.map((file, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
                   >
@@ -263,9 +263,9 @@ export default function SendEmailPage() {
                     <span className="text-xs text-muted-foreground">
                       {(file.size / 1024).toFixed(1)} KB
                     </span>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-8 w-8"
                       onClick={() => removeAttachment(index)}
                     >
@@ -275,8 +275,8 @@ export default function SendEmailPage() {
                 ))}
               </div>
             )}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => fileInputRef.current?.click()}
               className="w-full border-dashed"
             >
@@ -350,7 +350,7 @@ export default function SendEmailPage() {
               </DialogContent>
             </Dialog>
 
-            <Button 
+            <Button
               onClick={handleSend}
               disabled={recipients.length === 0 || !subject || !body || isSending}
               className="sm:w-auto"

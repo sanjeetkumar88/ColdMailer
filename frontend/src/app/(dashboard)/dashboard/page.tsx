@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { ResumeUpload } from "@/components/resume-upload"
 
 const stats = [
   { 
@@ -200,6 +201,29 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Resume Section */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Resume Manager</CardTitle>
+            <CardDescription>Upload and manage your resumes for outreach</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResumeUpload />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>My Documents</CardTitle>
+            <CardDescription>Recently uploaded files</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <p className="text-sm text-muted-foreground italic">Your resumes will appear here once uploaded.</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

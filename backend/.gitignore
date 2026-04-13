@@ -1,19 +1,15 @@
 # Dependencies
 node_modules/
-**/node_modules/
 
-# Next.js Build
-.next/
-**/ .next/
-out/
-
-# Build outputs
+# Build
 dist/
-**/dist/
 
-# Environment files
-.env*
-**/.env*
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Logs
 npm-debug.log*

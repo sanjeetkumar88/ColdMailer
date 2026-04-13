@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/dashboard/', '/onboarding/'],
     },
-    sitemap: 'https://coldmailer.com/sitemap.xml',
+    sitemap: 'https://coldmailer.me/sitemap.xml',
   }
 }
