@@ -1,13 +1,18 @@
 import mongoose from 'mongoose';
+import logger from './logger';
 
-const connectDB = async () => {
+export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mailflow');
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const mongoURI = process.env.MONGODB_URI;
+    
+    if (!mongoURI) {
+      throw new Error('MONGODB_URI is not defined in environment variables');
+    }
+
+    const conn = await mongoose.connect(mongoURI);
+    logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err: any) {
-    console.error(`Error Connecting to DB: ${err.message}`);
+    logger.error(`Error Connecting to DB: ${err.message}`);
     process.exit(1);
   }
 };
-
-export default connectDB;

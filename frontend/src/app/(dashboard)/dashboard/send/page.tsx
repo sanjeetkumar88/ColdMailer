@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   Send,
   X,
@@ -42,14 +42,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const templates = [
-  { id: "1", name: "Job Application", subject: "Application for {{role}} Position" },
-  { id: "2", name: "Follow Up", subject: "Following up on my application" },
-  { id: "3", name: "Cold Outreach", subject: "Quick question about {{company}}" },
-  { id: "4", name: "Thank You", subject: "Thank you for your time" },
-]
+
 
 export default function SendEmailPage() {
+  const [senders, setSenders] = useState<any[]>([])
+  const [templates, setTemplates] = useState<any[]>([])
+  const [selectedSender, setSelectedSender] = useState<string>("")
   const [recipients, setRecipients] = useState<string[]>([])
   const [recipientInput, setRecipientInput] = useState("")
   const [subject, setSubject] = useState("")
@@ -59,6 +57,31 @@ export default function SendEmailPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [sendersRes, templatesRes] = await Promise.all([
+          fetch(`${API_URL}/senders`),
+          fetch(`${API_URL}/templates`)
+        ])
+        const sendersData = await sendersRes.json()
+        const templatesData = await templatesRes.json()
+        
+        if (sendersData.success) setSenders(sendersData.data)
+        if (templatesData.success) setTemplates(templatesData.data)
+        
+        if (sendersData.data?.length > 0) {
+          setSelectedSender(sendersData.data[0]._id)
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error)
+      }
+    }
+    fetchData()
+  }, [])
 
   const addRecipient = (email: string) => {
     const trimmedEmail = email.trim().toLowerCase()
@@ -83,12 +106,11 @@ export default function SendEmailPage() {
   }
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId)
+    const template = templates.find(t => t._id === templateId)
     if (template) {
       setSelectedTemplate(templateId)
       setSubject(template.subject)
-      // Sample body content for template
-      setBody(`Dear Hiring Manager,\n\nI am writing to express my interest in the {{role}} position at {{company}}.\n\nWith my background in [Your Skills], I believe I would be a great fit for your team.\n\nI have attached my resume for your review.\n\nBest regards,\n{{name}}`)
+      setBody(template.html || template.text || "")
     }
   }
 
@@ -103,16 +125,67 @@ export default function SendEmailPage() {
   }
 
   const handleSend = async () => {
+    if (!selectedSender) return alert("Please select a sender account")
+    
     setIsSending(true)
-    // Simulate sending
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsSending(false)
-    // Reset form
-    setRecipients([])
-    setSubject("")
-    setBody("")
-    setAttachments([])
-    setSelectedTemplate(null)
+    try {
+      let attachmentUrls: string[] = []
+      
+      // 1. Upload Attachments if any
+      if (attachments.length > 0) {
+        const formData = new FormData()
+        attachments.forEach(file => formData.append('files', file))
+        
+        const uploadRes = await fetch(`${API_URL}/media/upload`, {
+          method: 'POST',
+          body: formData
+          // Note: Browser will automatically set Content-Type to multipart/form-data with boundary
+        })
+        const uploadData = await uploadRes.json()
+        if (uploadData.success) {
+          attachmentUrls = uploadData.data
+        }
+      }
+
+      // 2. Create Campaign
+      const campaignRes = await fetch(`${API_URL}/campaigns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `Campaign ${new Date().toLocaleString()}`,
+          sender: selectedSender,
+          template: selectedTemplate || (templates.length > 0 ? templates[0]._id : undefined),
+          recipients,
+          subject,
+          html: body,
+          attachments: attachmentUrls,
+          status: 'draft'
+        })
+      })
+      const campaignData = await campaignRes.json()
+      
+      if (!campaignData.success) throw new Error(campaignData.message)
+
+      // 2. Launch Campaign
+      const launchRes = await fetch(`${API_URL}/campaigns/${campaignData.data._id}/launch`, {
+        method: 'POST'
+      })
+      const launchData = await launchRes.json()
+
+      if (launchData.success) {
+        alert("Campaign launched successfully!")
+        // Reset form
+        setRecipients([])
+        setSubject("")
+        setBody("")
+        setAttachments([])
+        setSelectedTemplate(null)
+      }
+    } catch (error: any) {
+      alert(`Failed to send: ${error.message}`)
+    } finally {
+      setIsSending(false)
+    }
   }
 
   return (
@@ -127,6 +200,38 @@ export default function SendEmailPage() {
 
       <Card>
         <CardContent className="pt-6 space-y-6">
+          {/* Sender Selection */}
+          <div className="space-y-2">
+            <Label>From (Sender Account)</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  <span className="flex items-center gap-2">
+                    <Send className="w-4 h-4" />
+                    {selectedSender
+                      ? senders.find(s => s._id === selectedSender)?.email
+                      : "Select a sender account"}
+                  </span>
+                  <ChevronDown className="w-4 h-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                {senders.map((sender) => (
+                  <DropdownMenuItem
+                    key={sender._id}
+                    onClick={() => setSelectedSender(sender._id)}
+                    className="flex items-center justify-between"
+                  >
+                    <span>{sender.email}</span>
+                    {selectedSender === sender._id && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           {/* Recipients */}
           <div className="space-y-2">
             <Label>Recipients</Label>
@@ -166,7 +271,7 @@ export default function SendEmailPage() {
                   <span className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     {selectedTemplate
-                      ? templates.find(t => t.id === selectedTemplate)?.name
+                      ? templates.find(t => t._id === selectedTemplate)?.name
                       : "Select a template"}
                   </span>
                   <ChevronDown className="w-4 h-4 opacity-50" />
@@ -175,12 +280,12 @@ export default function SendEmailPage() {
               <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                 {templates.map((template) => (
                   <DropdownMenuItem
-                    key={template.id}
-                    onClick={() => handleTemplateSelect(template.id)}
+                    key={template._id}
+                    onClick={() => handleTemplateSelect(template._id)}
                     className="flex items-center justify-between"
                   >
                     <span>{template.name}</span>
-                    {selectedTemplate === template.id && (
+                    {selectedTemplate === template._id && (
                       <Check className="w-4 h-4 text-primary" />
                     )}
                   </DropdownMenuItem>
