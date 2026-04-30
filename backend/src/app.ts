@@ -10,14 +10,19 @@ import contactRoutes from './modules/contacts/contact.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import mediaRoutes from './modules/media/media.routes';
 
+import { apiRateLimiter, authRateLimiter } from './shared/middleware/rate-limiter.middleware';
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Apply general rate limiting to all routes
+app.use('/api', apiRateLimiter);
+
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/senders', senderRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/templates', templateRoutes);

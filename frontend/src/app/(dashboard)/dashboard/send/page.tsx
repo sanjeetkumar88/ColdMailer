@@ -186,12 +186,15 @@ function SendEmailForm() {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData
-          // Note: Browser will automatically set Content-Type to multipart/form-data with boundary
         })
+        
         const uploadData = await uploadRes.json()
-        if (uploadData.success) {
-          attachmentUrls = uploadData.data
+        
+        if (!uploadRes.ok || !uploadData.success) {
+          throw new Error(uploadData.message || "Failed to upload attachments. Campaign aborted.")
         }
+        
+        attachmentUrls = uploadData.data
       }
 
       // 2. Create Campaign
