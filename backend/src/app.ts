@@ -30,6 +30,14 @@ app.get('/health', (req: express.Request, res: express.Response) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Cannot ${req.method} ${req.path}`,
+  });
+});
+
 // Error handling
 app.use(errorMiddleware);
 

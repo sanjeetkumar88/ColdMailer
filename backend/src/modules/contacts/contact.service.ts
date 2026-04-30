@@ -5,12 +5,12 @@ export class ContactService {
     return await Contact.create(data);
   }
 
-  static async getContacts() {
-    return await Contact.find();
+  static async getContacts(userId: string) {
+    return await Contact.find({ userId });
   }
 
-  static async getContactByEmail(email: string) {
-    return await Contact.findOne({ email });
+  static async getContactByEmail(email: string, userId: string) {
+    return await Contact.findOne({ email, userId });
   }
 
   static async bulkCreate(contacts: Partial<IContact>[]) {

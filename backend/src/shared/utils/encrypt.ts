@@ -5,6 +5,7 @@ const ALGORITHM = 'aes-256-cbc';
 const KEY = crypto.scryptSync(env.ENCRYPTION_KEY, 'salt', 32);
 
 export const encrypt = (text: string): string => {
+  if (!text) return text;
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -13,6 +14,7 @@ export const encrypt = (text: string): string => {
 };
 
 export const decrypt = (text: string): string => {
+  if (!text || !text.includes(':')) return text;
   const [ivHex, encryptedText] = text.split(':');
   const iv = Buffer.from(ivHex, 'hex');
   const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);

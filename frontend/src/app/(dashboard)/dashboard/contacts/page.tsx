@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { 
   Plus, 
   Search, 
@@ -70,17 +71,12 @@ interface Contact {
 
 const availableTags = ["HR", "Recruiter", "Hiring Manager", "Startup", "Enterprise", "Agency"]
 
-const initialContacts: Contact[] = [
-  { id: "1", name: "Sarah Chen", email: "sarah@techcorp.com", company: "TechCorp", tags: ["HR", "Enterprise"], createdAt: "Mar 15, 2024" },
-  { id: "2", name: "Mike Johnson", email: "mike@startup.io", company: "Startup.io", tags: ["Recruiter", "Startup"], createdAt: "Mar 14, 2024" },
-  { id: "3", name: "Emily Davis", email: "emily@agency.net", company: "Talent Agency", tags: ["Agency", "Recruiter"], createdAt: "Mar 12, 2024" },
-  { id: "4", name: "James Wilson", email: "james@enterprise.com", company: "Enterprise Co", tags: ["Hiring Manager", "Enterprise"], createdAt: "Mar 10, 2024" },
-  { id: "5", name: "Lisa Brown", email: "lisa@innovation.tech", company: "Innovation Tech", tags: ["HR", "Startup"], createdAt: "Mar 8, 2024" },
-  { id: "6", name: "David Lee", email: "david@globalhr.com", company: "Global HR", tags: ["Recruiter", "Agency"], createdAt: "Mar 5, 2024" },
-]
+const initialContacts: any[] = []
 
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts)
+  const { data: session } = useSession()
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [selectedContacts, setSelectedContacts] = useState<string[]>([])
@@ -88,13 +84,104 @@ export default function ContactsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isImportOpen, setIsImportOpen] = useState(false)
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [selectedContact, setSelectedContact] = useState<any | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     company: "",
     tags: [] as string[]
   })
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  const token = (session?.user as any)?.accessToken
+
+  const fetchContacts = async () => {
+    if (!token) return
+    try {
+      const res = await fetch(`${API_URL}/contacts`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setContacts(data.data.map((c: any) => ({
+          id: c._id,
+          name: c.name,
+          email: c.email,
+          company: c.company || "",
+          tags: c.tags || [],
+          createdAt: new Date(c.createdAt).toLocaleDateString()
+        })))
+      }
+    } catch (error) {
+      console.error("Failed to fetch contacts:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchContacts()
+  }, [token])
+
+  const handleAdd = async () => {
+    try {
+      const res = await fetch(`${API_URL}/contacts`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      })
+      if (res.ok) {
+        fetchContacts()
+        setFormData({ name: "", email: "", company: "", tags: [] })
+        setIsAddOpen(false)
+      }
+    } catch (error) {
+      console.error("Failed to add contact:", error)
+    }
+  }
+
+  const handleEdit = async () => {
+    if (selectedContact) {
+      try {
+        const res = await fetch(`${API_URL}/contacts/${selectedContact.id}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        })
+        if (res.ok) {
+          fetchContacts()
+          setIsEditOpen(false)
+          setSelectedContact(null)
+        }
+      } catch (error) {
+        console.error("Failed to update contact:", error)
+      }
+    }
+  }
+
+  const handleDelete = async () => {
+    if (selectedContact) {
+      try {
+        const res = await fetch(`${API_URL}/contacts/${selectedContact.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (res.ok) {
+          fetchContacts()
+          setIsDeleteOpen(false)
+          setSelectedContact(null)
+        }
+      } catch (error) {
+        console.error("Failed to delete contact:", error)
+      }
+    }
+  }
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const filteredContacts = contacts.filter(c => {
@@ -105,40 +192,6 @@ export default function ContactsPage() {
     const matchesTags = selectedTags.length === 0 || selectedTags.some(t => c.tags.includes(t))
     return matchesSearch && matchesTags
   })
-
-  const handleAdd = () => {
-    const newContact: Contact = {
-      id: Date.now().toString(),
-      name: formData.name,
-      email: formData.email,
-      company: formData.company,
-      tags: formData.tags,
-      createdAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-    }
-    setContacts([newContact, ...contacts])
-    setFormData({ name: "", email: "", company: "", tags: [] })
-    setIsAddOpen(false)
-  }
-
-  const handleEdit = () => {
-    if (selectedContact) {
-      setContacts(contacts.map(c => 
-        c.id === selectedContact.id 
-          ? { ...c, name: formData.name, email: formData.email, company: formData.company, tags: formData.tags }
-          : c
-      ))
-      setIsEditOpen(false)
-      setSelectedContact(null)
-    }
-  }
-
-  const handleDelete = () => {
-    if (selectedContact) {
-      setContacts(contacts.filter(c => c.id !== selectedContact.id))
-      setIsDeleteOpen(false)
-      setSelectedContact(null)
-    }
-  }
 
   const handleBulkDelete = () => {
     setContacts(contacts.filter(c => !selectedContacts.includes(c.id)))

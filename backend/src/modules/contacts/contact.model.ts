@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IContact extends Document {
   email: string;
@@ -7,6 +7,7 @@ export interface IContact extends Document {
   tags: string[];
   metadata: Record<string, any>;
   isActive: boolean;
+  userId: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,7 @@ const contactSchema = new Schema<IContact>(
     tags: [{ type: String }],
     metadata: { type: Schema.Types.Mixed },
     isActive: { type: Boolean, default: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }
 );

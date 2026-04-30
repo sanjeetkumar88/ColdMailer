@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { Types } from 'mongoose';
 import { env } from '../../config/env';
 import { SenderService } from './sender.service';
 import { encrypt } from '../../shared/utils/encrypt';
@@ -25,7 +26,7 @@ export class SenderAuthService {
     });
   }
 
-  static async handleCallback(code: string) {
+  static async handleCallback(code: string, userId: string) {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
@@ -45,6 +46,7 @@ export class SenderAuthService {
         expiryDate: tokens.expiry_date,
       },
       isActive: true,
+      userId: new Types.ObjectId(userId) as any,
     };
 
     // Note: SenderService.createSender already handles encryption if we pass credentials

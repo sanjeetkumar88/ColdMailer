@@ -9,6 +9,7 @@ const envSchema = z.object({
   MONGODB_URI: z.string(),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.string().default('6379'),
+  REDIS_URL: z.string(),
   ENCRYPTION_KEY: z.string().min(32, 'Encryption key must be 32 characters long'),
   JWT_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string(),
@@ -22,7 +23,7 @@ const envSchema = z.object({
 const envVars = envSchema.safeParse(process.env);
 
 if (!envVars.success) {
-  console.error('❌ Invalid environment variables:', envVars.error.format());
+  console.error('Invalid environment variables:', envVars.error.format());
   process.exit(1);
 }
 

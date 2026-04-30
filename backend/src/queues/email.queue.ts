@@ -1,8 +1,8 @@
 import { Queue } from 'bullmq';
-import { redisClient } from '../cache/redis.client';
+import { ioredisClient } from '../cache/redis.client';
 
 export const emailQueue = new Queue('email', {
-  connection: redisClient,
+  connection: ioredisClient,
   defaultJobOptions: {
     attempts: 5,
     backoff: { type: 'exponential', delay: 2000 },

@@ -10,13 +10,23 @@ export const protect = asyncHandler(async (req: any, res: Response, next: NextFu
 
   if (req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.query.token) {
+    token = req.query.token as string;
   }
 
   if (!token) {
     throw new AppError('You are not logged in. Please log in to get access.', 401);
   }
 
-  const decoded: any = jwt.verify(token, env.JWT_SECRET);
+  let decoded: any;
+  try {
+    decoded = jwt.verify(token, env.JWT_SECRET);
+  } catch (err: any) {
+    if (err.name === 'TokenExpiredError') {
+      throw new AppError('Your token has expired. Please log in again.', 401);
+    }
+    throw new AppError('Invalid token. Please log in again.', 401);
+  }
 
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { 
   Plus, 
   Search, 
@@ -104,58 +105,125 @@ const initialTemplates: Template[] = [
 ]
 
 export default function TemplatesPage() {
-  const [templates, setTemplates] = useState<Template[]>(initialTemplates)
+  const { data: session } = useSession()
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     subject: "",
     body: ""
   })
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  const token = (session?.user as any)?.accessToken
+
+  const fetchTemplates = async () => {
+    if (!token) return
+    try {
+      const res = await fetch(`${API_URL}/templates`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTemplates(data.data.map((t: any) => ({
+          id: t._id,
+          name: t.name,
+          subject: t.subject,
+          body: t.html || t.text || "",
+          usageCount: 0,
+          lastUsed: "Never",
+          createdAt: new Date(t.createdAt).toLocaleDateString()
+        })))
+      }
+    } catch (error) {
+      console.error("Failed to fetch templates:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTemplates()
+  }, [token])
+
+  const handleCreate = async () => {
+    try {
+      const res = await fetch(`${API_URL}/templates`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          subject: formData.subject,
+          html: formData.body
+        })
+      })
+      if (res.ok) {
+        fetchTemplates()
+        setFormData({ name: "", subject: "", body: "" })
+        setIsCreateOpen(false)
+      }
+    } catch (error) {
+      console.error("Failed to create template:", error)
+    }
+  }
+
+  const handleEdit = async () => {
+    if (selectedTemplate) {
+      try {
+        const res = await fetch(`${API_URL}/templates/${selectedTemplate.id}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            subject: formData.subject,
+            html: formData.body
+          })
+        })
+        if (res.ok) {
+          fetchTemplates()
+          setIsEditOpen(false)
+          setSelectedTemplate(null)
+        }
+      } catch (error) {
+        console.error("Failed to update template:", error)
+      }
+    }
+  }
+
+  const handleDelete = async () => {
+    if (selectedTemplate) {
+      try {
+        const res = await fetch(`${API_URL}/templates/${selectedTemplate.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (res.ok) {
+          fetchTemplates()
+          setIsDeleteOpen(false)
+          setSelectedTemplate(null)
+        }
+      } catch (error) {
+        console.error("Failed to delete template:", error)
+      }
+    }
+  }
+
   const filteredTemplates = templates.filter(t => 
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.subject.toLowerCase().includes(searchQuery.toLowerCase())
   )
-
-  const handleCreate = () => {
-    const newTemplate: Template = {
-      id: Date.now().toString(),
-      name: formData.name,
-      subject: formData.subject,
-      body: formData.body,
-      usageCount: 0,
-      lastUsed: "Never",
-      createdAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-    }
-    setTemplates([newTemplate, ...templates])
-    setFormData({ name: "", subject: "", body: "" })
-    setIsCreateOpen(false)
-  }
-
-  const handleEdit = () => {
-    if (selectedTemplate) {
-      setTemplates(templates.map(t => 
-        t.id === selectedTemplate.id 
-          ? { ...t, name: formData.name, subject: formData.subject, body: formData.body }
-          : t
-      ))
-      setIsEditOpen(false)
-      setSelectedTemplate(null)
-    }
-  }
-
-  const handleDelete = () => {
-    if (selectedTemplate) {
-      setTemplates(templates.filter(t => t.id !== selectedTemplate.id))
-      setIsDeleteOpen(false)
-      setSelectedTemplate(null)
-    }
-  }
 
   const handleDuplicate = (template: Template) => {
     const duplicate: Template = {

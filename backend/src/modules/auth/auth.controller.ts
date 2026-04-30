@@ -17,3 +17,28 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken: token } = req.body;
+  const result = await AuthService.refreshAccessToken(token);
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+});
+
+export const googleSync = asyncHandler(async (req: Request, res: Response) => {
+  const { email, name } = req.body;
+  const result = await AuthService.googleSync({ email, name });
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+});
+
+export const getProfile = asyncHandler(async (req: any, res: Response) => {
+  res.status(200).json({
+    success: true,
+    data: req.user,
+  });
+});

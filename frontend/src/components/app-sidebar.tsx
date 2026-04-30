@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { signOut, useSession } from "next-auth/react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -27,6 +28,13 @@ const navigation = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { data: session } = useSession()
+  const user = session?.user
+
+  // Get initials for avatar
+  const initials = user?.name 
+    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
+    : "JD"
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-border bg-sidebar">
@@ -69,14 +77,19 @@ export function AppSidebar() {
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-medium text-primary">JD</span>
+            <span className="text-sm font-medium text-primary">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-sidebar-foreground truncate">John Doe</div>
-            <div className="text-xs text-muted-foreground truncate">john@example.com</div>
+            <div className="text-sm font-medium text-sidebar-foreground truncate">{user?.name || "User"}</div>
+            <div className="text-xs text-muted-foreground truncate">{user?.email || "user@example.com"}</div>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="w-full justify-start mt-2 text-muted-foreground hover:text-foreground">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full justify-start mt-2 text-muted-foreground hover:text-foreground"
+          onClick={() => signOut({ callbackUrl: '/login' })}
+        >
           <LogOut className="w-4 h-4 mr-2" />
           Sign out
         </Button>

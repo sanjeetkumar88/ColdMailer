@@ -94,6 +94,25 @@ function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
+function EmptyActions({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="empty-actions"
+      className={cn('flex items-center gap-4', className)}
+      {...props}
+    />
+  )
+}
+
+// Attach sub-components for dot notation
+Empty.Header = EmptyHeader
+Empty.Title = EmptyTitle
+Empty.Description = EmptyDescription
+Empty.Content = EmptyContent
+Empty.Media = EmptyMedia
+Empty.Icon = EmptyMedia // Alias for convenience
+Empty.Actions = EmptyActions
+
 export {
   Empty,
   EmptyHeader,
@@ -101,4 +120,5 @@ export {
   EmptyDescription,
   EmptyContent,
   EmptyMedia,
+  EmptyActions,
 }

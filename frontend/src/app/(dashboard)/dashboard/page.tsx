@@ -10,194 +10,374 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  MoreHorizontal
+  MoreHorizontal,
+  RefreshCw, 
+  Copy, 
+  Trash2, 
+  Mail as MailIcon, 
+  ArrowRightCircle,
+  ExternalLink
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ResumeUpload } from "@/components/resume-upload"
+import { useSession } from "next-auth/react"
+import { useState, useEffect, useCallback } from "react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
-const stats = [
-  { 
-    name: "Total Emails Sent", 
-    value: "2,847", 
-    change: "+12.5%", 
-    trend: "up",
-    icon: Mail,
-    description: "This month"
-  },
-  { 
-    name: "Templates Created", 
-    value: "12", 
-    change: "+2", 
-    trend: "up",
-    icon: FileText,
-    description: "Active templates"
-  },
-  { 
-    name: "Success Rate", 
-    value: "98.2%", 
-    change: "+0.8%", 
-    trend: "up",
-    icon: TrendingUp,
-    description: "Delivery rate"
-  },
-  { 
-    name: "Pending", 
-    value: "23", 
-    change: "-5", 
-    trend: "down",
-    icon: Clock,
-    description: "Emails in queue"
-  },
+const initialStats = [
+  { name: "Total Emails Sent", value: "0", change: "0%", trend: "up", icon: Mail, description: "Lifetime" },
+  { name: "Success Rate", value: "0%", change: "0%", trend: "up", icon: TrendingUp, description: "Delivery rate" },
+  { name: "Emails Opened", value: "0", change: "0%", trend: "up", icon: Clock, description: "Total opens" },
+  { name: "Active Campaigns", value: "0", change: "0%", trend: "up", icon: Send, description: "Running now" },
 ]
 
-const recentActivity = [
-  { 
-    id: 1,
-    recipient: "sarah@techcorp.com", 
-    subject: "Application for Senior Developer Role",
-    template: "Job Application",
-    status: "delivered",
-    time: "2 minutes ago"
-  },
-  { 
-    id: 2,
-    recipient: "hr@startup.io", 
-    subject: "Full Stack Developer Position",
-    template: "Job Application",
-    status: "delivered",
-    time: "15 minutes ago"
-  },
-  { 
-    id: 3,
-    recipient: "jobs@enterprise.com", 
-    subject: "Interest in Engineering Position",
-    template: "Follow Up",
-    status: "pending",
-    time: "1 hour ago"
-  },
-  { 
-    id: 4,
-    recipient: "recruit@agency.net", 
-    subject: "Re: Interview Availability",
-    template: "Custom",
-    status: "delivered",
-    time: "2 hours ago"
-  },
-  { 
-    id: 5,
-    recipient: "invalid@email", 
-    subject: "Application for PM Role",
-    template: "Job Application",
-    status: "failed",
-    time: "3 hours ago"
-  },
-]
+const initialActivity: any[] = []
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession()
+  const [dashboardStats, setDashboardStats] = useState(initialStats)
+  const [recentActivityData, setRecentActivityData] = useState(initialActivity)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  const token = (session?.user as any)?.accessToken
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!token) {
+      if (status !== 'loading') setIsLoading(false)
+      return
+    }
+
+    try {
+      const [statsRes, activityRes] = await Promise.all([
+        fetch(`${API_URL}/analytics/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/campaigns`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ])
+
+      const statsData = await statsRes.json()
+      const activityData = await activityRes.json()
+
+      if (statsData.success) {
+        const s = statsData.data
+        setDashboardStats([
+          { 
+            name: "Total Emails Sent", 
+            value: s.totalSent?.toString() || "0", 
+            change: "+0%", 
+            trend: "up",
+            icon: Mail,
+            description: "Lifetime"
+          },
+          { 
+            name: "Success Rate", 
+            value: s.successRate ? `${s.successRate.toFixed(1)}%` : "0%", 
+            change: "+0%", 
+            trend: "up",
+            icon: TrendingUp,
+            description: "Delivery rate"
+          },
+          { 
+            name: "Emails Opened", 
+            value: s.totalOpened?.toString() || "0", 
+            change: "+0%", 
+            trend: "up",
+            icon: Clock,
+            description: "Total opens"
+          },
+          { 
+            name: "Active Campaigns", 
+            value: (activityData.campaigns || activityData.data)?.filter((c: any) => c.status === 'processing').length.toString() || "0", 
+            change: "+0%", 
+            trend: "up",
+            icon: Send,
+            description: "Running now"
+          },
+        ])
+      }
+
+      if (activityData.success && (activityData.campaigns || activityData.data)) {
+        const campaigns = activityData.campaigns || activityData.data;
+        const mappedActivity = campaigns.slice(0, 10).map((c: any) => ({
+          id: c._id,
+          recipient: c.recipients?.length === 1 ? c.recipients[0] : `${c.recipients?.length || 0} recipients`,
+          subject: c.subject,
+          template: c.template?.name || "Custom",
+          status: c.status,
+          hasSender: !!c.sender,
+          senderEmail: c.sender?.email,
+          progress: {
+            sent: c.sentCount || 0,
+            failed: c.failedCount || 0,
+            total: c.recipients?.length || 0
+          },
+          time: new Date(c.updatedAt).toLocaleDateString()
+        }))
+        setRecentActivityData(mappedActivity)
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [token, API_URL, status])
+
+  useEffect(() => {
+    if (token) {
+      setIsLoading(true)
+      fetchDashboardData()
+      
+      const interval = setInterval(fetchDashboardData, 30000)
+      return () => clearInterval(interval)
+    } else if (status !== 'loading') {
+      setIsLoading(false)
+    }
+  }, [token, status, fetchDashboardData])
+
+  const handleAction = async (action: string, activity: any) => {
+    if (action === 'resend') {
+      if (!activity.hasSender) {
+        toast.error("Cannot resend: The sender account for this campaign has been disconnected. Please use 'Duplicate' to send using a new account.")
+        return
+      }
+      
+      try {
+        const endpoint = activity.progress.failed > 0 
+          ? `${API_URL}/campaigns/${activity.id}/retry` 
+          : `${API_URL}/campaigns/${activity.id}/launch`;
+          
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data.success) {
+          toast.success(activity.progress.failed > 0 ? "Smart retry started for failed emails!" : "Campaign re-launched successfully!")
+          fetchDashboardData()
+        } else {
+          toast.error(data.message || "Failed to resend")
+        }
+      } catch (error) {
+        toast.error("Network error occurred")
+      }
+    } else if (action === 'followup') {
+      window.location.href = `/dashboard/send?followup=${activity.id}`
+    } else if (action === 'duplicate') {
+      window.location.href = `/dashboard/send?duplicate=${activity.id}`
+    } else if (action === 'delete') {
+      if (!confirm("Are you sure you want to delete this campaign? This cannot be undone.")) return;
+      try {
+        const res = await fetch(`${API_URL}/campaigns/${activity.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data.success) {
+          toast.success("Campaign deleted")
+          fetchDashboardData()
+        }
+      } catch (error) {
+        toast.error("Failed to delete")
+      }
+    }
+  }
+
+  if (status === 'loading' || (isLoading && token)) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading dashboard data...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back! Here&apos;s your email activity overview.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back! Here&apos;s an overview of your outreach performance.</p>
         </div>
-        <Link href="/dashboard/send">
-          <Button>
-            <Send className="w-4 h-4 mr-2" />
-            Send Email
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => fetchDashboardData()}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
           </Button>
-        </Link>
+          <Link href="/dashboard/send">
+            <Button size="sm">
+              <Send className="w-4 h-4 mr-2" />
+              New Campaign
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.name}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="w-5 h-5 text-primary" />
-                </div>
-                <div className={`flex items-center gap-1 text-sm ${
-                  stat.trend === "up" ? "text-primary" : "text-muted-foreground"
+        {dashboardStats.map((stat) => (
+          <Card key={stat.name} className="relative overflow-hidden group hover:border-primary/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.name}</CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="flex items-center gap-1 mt-1">
+                <span className={`text-xs font-medium flex items-center ${
+                  stat.trend === "up" ? "text-primary" : "text-destructive"
                 }`}>
+                  {stat.trend === "up" ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
                   {stat.change}
-                  {stat.trend === "up" ? (
-                    <ArrowUpRight className="w-4 h-4" />
-                  ) : (
-                    <ArrowDownRight className="w-4 h-4" />
-                  )}
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.name}</div>
+                </span>
+                <span className="text-xs text-muted-foreground">{stat.description}</span>
               </div>
             </CardContent>
+            <div className="absolute bottom-0 left-0 h-1 bg-primary/10 w-full group-hover:bg-primary/20 transition-colors" />
           </Card>
         ))}
       </div>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
+      {/* Main Content Grid */}
+      <Card className="overflow-hidden border-primary/10">
+        <CardHeader className="bg-muted/30 pb-4 border-b">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your latest email sends and their status</CardDescription>
+              <CardDescription>Real-time status of your email campaigns</CardDescription>
             </div>
-            <Button variant="outline" size="sm">
-              View All
-            </Button>
+            <Link href="/dashboard/campaigns">
+              <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/5">
+                View all
+              </Button>
+            </Link>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div 
-                key={activity.id}
-                className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  activity.status === "delivered" 
-                    ? "bg-primary/10" 
-                    : activity.status === "pending" 
-                      ? "bg-warning/10" 
-                      : "bg-destructive/10"
-                }`}>
-                  {activity.status === "delivered" ? (
-                    <CheckCircle2 className="w-5 h-5 text-primary" />
-                  ) : activity.status === "pending" ? (
-                    <Clock className="w-5 h-5 text-warning" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-destructive" />
-                  )}
+        <CardContent className="p-0">
+          <div className="divide-y divide-border">
+            {recentActivityData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4 text-muted-foreground">
+                  <Mail className="w-8 h-8" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{activity.recipient}</span>
-                    <Badge variant="secondary" className="text-xs shrink-0">
-                      {activity.template}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-muted-foreground truncate mt-0.5">
-                    {activity.subject}
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground shrink-0 hidden sm:block">
-                  {activity.time}
-                </div>
-                <Button variant="ghost" size="icon" className="shrink-0">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
+                <h3 className="text-lg font-medium">No activity yet</h3>
+                <p className="text-sm text-muted-foreground max-w-xs mt-1">
+                  Start by creating a new campaign or template to see your outreach progress here.
+                </p>
+                <Link href="/dashboard/send">
+                  <Button variant="outline" className="mt-6">
+                    Launch your first campaign
+                  </Button>
+                </Link>
               </div>
-            ))}
+            ) : (
+              recentActivityData.map((activity) => {
+                const displayStatus = !activity.hasSender && (activity.status === 'processing' || activity.status === 'scheduled') ? 'failed' : activity.status;
+
+                return (
+                  <div 
+                    key={activity.id}
+                    className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      displayStatus === "completed" 
+                        ? "bg-primary/10" 
+                        : displayStatus === "processing"
+                          ? "bg-blue-500/10"
+                          : displayStatus === "pending" || displayStatus === "scheduled"
+                            ? "bg-warning/10" 
+                            : "bg-destructive/10"
+                    }`}>
+                      {displayStatus === "completed" ? (
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
+                      ) : displayStatus === "processing" ? (
+                        <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />
+                      ) : displayStatus === "pending" || displayStatus === "scheduled" ? (
+                        <Clock className="w-5 h-5 text-warning" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-destructive" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{activity.recipient}</span>
+                        <Badge variant="secondary" className="text-xs shrink-0">
+                          {activity.template}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate mt-0.5">
+                        {activity.subject} {activity.status === 'processing' && `(${activity.progress.sent}/${activity.progress.total})`}
+                        {!activity.hasSender && (
+                          <span className="text-destructive text-[10px] ml-2 font-medium">
+                            (Sender disconnected)
+                          </span>
+                        )}
+                        {activity.progress.failed > 0 && (
+                          <span className="text-destructive text-[10px] ml-2 font-medium">
+                            ({activity.progress.failed} failed)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground shrink-0 hidden sm:block">
+                      {activity.time}
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="shrink-0">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => handleAction('resend', activity)}>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          {activity.progress.failed > 0 ? "Retry Failed" : "Resend Now"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAction('followup', activity)}>
+                          <ArrowRightCircle className="w-4 h-4 mr-2" />
+                          Follow-up
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAction('duplicate', activity)}>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/campaigns/${activity.id}`}>
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View Details
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleAction('delete', activity)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Record
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )
+              })
+            )}
           </div>
         </CardContent>
       </Card>
@@ -262,16 +442,16 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/dashboard/contacts">
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full sm:col-span-2 lg:col-span-1">
+          <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-primary" />
+                  <TrendingUp className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <div className="font-medium">Import Contacts</div>
+                  <div className="font-medium">Manage Contacts</div>
                   <div className="text-sm text-muted-foreground">
-                    Add recipients from CSV
+                    Organize your outreach list
                   </div>
                 </div>
               </div>

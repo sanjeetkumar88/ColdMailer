@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { redisClient } from '../cache/redis.client';
+import { redisClient, ioredisClient } from '../cache/redis.client';
 import { getProvider } from '../providers';
 import { Sender } from '../modules/senders/sender.model';
 import { Template } from '../modules/templates/template.model';
@@ -38,30 +38,64 @@ export const emailWorker = new Worker(
       email: recipientEmail,
     });
 
+    // Inject tracking pixel
+    const API_URL = process.env.API_URL || 'http://localhost:5000/api';
+    const trackingUrl = `${API_URL}/analytics/track/${campaignId}/${recipientEmail}`;
+    const trackingPixel = `<img src="${trackingUrl}" width="1" height="1" style="display:none !important;" />`;
+    const trackedHtml = html + trackingPixel;
+
     const provider = getProvider(sender);
 
     await provider.sendEmail({
       from: sender.email,
       to: recipientEmail,
       subject,
-      html,
+      html: trackedHtml,
       text,
       attachments,
     });
 
     // Emit event
     emitter.emit(EmailEvent.SENT, { campaignId, recipientEmail, senderId });
+    console.log(`[EmailWorker] Successfully sent email to ${recipientEmail} for campaign ${campaignId}`);
 
-    // Increment progress in Redis
-    await redisClient.hincrby(CacheKeys.campaignProgress(campaignId), 'sent', 1);
+    // Increment progress in Redis and MongoDB
+    const campaignIdStr = campaignId.toString();
+    const updatedCampaign = await import('../modules/campaigns/campaign.model').then(({ Campaign }) => 
+      Campaign.findByIdAndUpdate(campaignId, { $inc: { sentCount: 1 } }, { new: true })
+    );
+
+    await redisClient.hIncrBy(CacheKeys.campaignProgress(campaignIdStr), 'sent', 1);
+
+    // Check if campaign is finished
+    if (updatedCampaign) {
+      const totalProcessed = (updatedCampaign.sentCount || 0) + (updatedCampaign.failedCount || 0);
+      const totalExpected = updatedCampaign.recipients?.length || 0;
+      
+      if (totalProcessed >= totalExpected && updatedCampaign.status === 'processing') {
+        updatedCampaign.status = 'completed';
+        await updatedCampaign.save();
+        console.log(`[EmailWorker] Campaign ${campaignId} marked as COMPLETED`);
+      }
+    }
+
+    console.log(`[EmailWorker] Incremented progress for campaign ${campaignId}`);
   },
   {
-    connection: redisClient,
+    connection: ioredisClient,
     concurrency: 20,
     limiter: {
       max: 100,
       duration: 1000,
     },
+    removeOnComplete: {
+      age: 3600, // 1 hour
+      count: 1000,
+    },
+    removeOnFail: {
+      age: 24 * 3600, // 24 hours
+      count: 5000,
+    }
   }
 );
 
@@ -72,5 +106,28 @@ emailWorker.on('failed', (job, err) => {
       recipientEmail: job.data.recipientEmail,
       error: err.message,
     });
+    
+    // Increment failed count in Redis and MongoDB
+    const campaignIdStr = job.data.campaignId.toString();
+    const campaignId = job.data.campaignId;
+    
+    Promise.all([
+      redisClient.hIncrBy(CacheKeys.campaignProgress(campaignIdStr), 'failed', 1),
+      import('../modules/campaigns/campaign.model').then(({ Campaign }) => 
+        Campaign.findByIdAndUpdate(campaignId, { $inc: { failedCount: 1 } }, { new: true })
+      )
+    ]).then(async ([_, updatedCampaign]) => {
+      // Check if campaign is finished
+      if (updatedCampaign) {
+        const totalProcessed = (updatedCampaign.sentCount || 0) + (updatedCampaign.failedCount || 0);
+        const totalExpected = updatedCampaign.recipients?.length || 0;
+        
+        if (totalProcessed >= totalExpected && updatedCampaign.status === 'processing') {
+          updatedCampaign.status = 'completed';
+          await updatedCampaign.save();
+          console.log(`[EmailWorker] Campaign ${campaignId} marked as COMPLETED (with failures)`);
+        }
+      }
+    }).catch(e => console.error('Failed to increment error count:', e));
   }
 });

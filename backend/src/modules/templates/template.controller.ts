@@ -2,12 +2,12 @@ import { Request, Response } from 'express';
 import { TemplateService } from './template.service';
 import { asyncHandler } from '../../shared/utils/asyncHandler';
 
-export const createTemplate = asyncHandler(async (req: Request, res: Response) => {
-  const template = await TemplateService.createTemplate(req.body);
+export const createTemplate = asyncHandler(async (req: any, res: Response) => {
+  const template = await TemplateService.createTemplate({ ...req.body, userId: req.user.id });
   res.status(201).json({ success: true, data: template });
 });
 
-export const getTemplates = asyncHandler(async (req: Request, res: Response) => {
-  const templates = await TemplateService.getTemplates();
+export const getTemplates = asyncHandler(async (req: any, res: Response) => {
+  const templates = await TemplateService.getTemplates(req.user.id);
   res.status(200).json({ success: true, data: templates });
 });

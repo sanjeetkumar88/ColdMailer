@@ -1,6 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { toast } from "sonner"
+
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { 
   Mail, 
   Shield, 
@@ -47,8 +50,10 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function SettingsPage() {
-  const [connectedEmail, setConnectedEmail] = useState("john.doe@gmail.com")
-  const [authMethod, setAuthMethod] = useState<"oauth" | "app-password">("oauth")
+  const { data: session } = useSession()
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [senders, setSenders] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system")
   const [notifications, setNotifications] = useState({
     emailSent: true,
@@ -59,12 +64,69 @@ export default function SettingsPage() {
   const [isReconfigureOpen, setIsReconfigureOpen] = useState(false)
   const [isReconfiguring, setIsReconfiguring] = useState(false)
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  const token = (session?.user as any)?.accessToken
+
+  const fetchData = async () => {
+    if (!token) return
+    try {
+      const [profileRes, sendersRes] = await Promise.all([
+        fetch(`${API_URL}/auth/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/senders`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ])
+      const profileData = await profileRes.json()
+      const sendersData = await sendersRes.json()
+
+      if (profileData.success) setUserProfile(profileData.data)
+      if (sendersData.success) setSenders(sendersData.data)
+    } catch (error) {
+      console.error("Failed to fetch settings data:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [token])
+
+  const connectedSender = senders.length > 0 ? senders[0] : null
+  const authMethod = connectedSender?.authMethod || "oauth"
+
   const handleReconfigure = () => {
     setIsReconfiguring(true)
-    setTimeout(() => {
+    if (authMethod === "oauth") {
+      // Redirect to backend OAuth flow with token
+      window.location.href = `${API_URL}/senders/google/auth?token=${token}`
+    } else {
+      // Logic for App Password would go here
       setIsReconfiguring(false)
       setIsReconfigureOpen(false)
-    }, 1500)
+    }
+  }
+
+  const handleDisconnect = async (id: string) => {
+    if (!confirm("Are you sure you want to disconnect this account? You will not be able to send emails until you reconnect.")) return
+
+    try {
+      const res = await fetch(`${API_URL}/senders/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Account disconnected successfully")
+        fetchData()
+      } else {
+        toast.error(data.message || "Failed to disconnect")
+      }
+    } catch (error) {
+      toast.error("Network error occurred")
+    }
   }
 
   return (
@@ -90,26 +152,40 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Connected Account */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Mail className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <div className="font-medium">{connectedEmail}</div>
+                <div className="font-medium">{connectedSender?.email || "No account connected"}</div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Connected via {authMethod === "oauth" ? "Google OAuth" : "App Password"}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    <Check className="w-3 h-3 mr-1" />
-                    Active
-                  </Badge>
+                  <span>{connectedSender ? `Connected via ${authMethod === "oauth" ? "Google OAuth" : "App Password"}` : "Connect an account to start sending"}</span>
+                  {connectedSender && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Check className="w-3 h-3 mr-1" />
+                      Active
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
-            <Button variant="outline" onClick={() => setIsReconfigureOpen(true)}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Reconfigure
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setIsReconfigureOpen(true)}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {connectedSender ? "Reconfigure" : "Connect Account"}
+              </Button>
+              {connectedSender && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => handleDisconnect(connectedSender._id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Auth Method Info */}
@@ -184,17 +260,17 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" defaultValue="John" />
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" value={userProfile?.name || ""} readOnly />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" defaultValue="Doe" />
+              <Label htmlFor="role">Role</Label>
+              <Input id="role" value={userProfile?.role || ""} readOnly />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" defaultValue="john@example.com" />
+            <Input id="email" type="email" value={userProfile?.email || ""} readOnly />
           </div>
           <Button>Save Changes</Button>
         </CardContent>

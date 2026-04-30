@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Suspense } from "react"
+import { useSession } from "next-auth/react"
+import { useSearchParams, useRouter } from "next/navigation"
 import {
   Send,
   X,
@@ -44,7 +46,12 @@ import {
 
 
 
-export default function SendEmailPage() {
+function SendEmailForm() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const followupId = searchParams.get('followup')
+  const duplicateId = searchParams.get('duplicate')
+
   const [senders, setSenders] = useState<any[]>([])
   const [templates, setTemplates] = useState<any[]>([])
   const [selectedSender, setSelectedSender] = useState<string>("")
@@ -56,7 +63,10 @@ export default function SendEmailPage() {
   const [attachments, setAttachments] = useState<File[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const { data: session } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  const token = (session?.user as any)?.accessToken;
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -64,8 +74,12 @@ export default function SendEmailPage() {
     const fetchData = async () => {
       try {
         const [sendersRes, templatesRes] = await Promise.all([
-          fetch(`${API_URL}/senders`),
-          fetch(`${API_URL}/templates`)
+          fetch(`${API_URL}/senders`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${API_URL}/templates`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
         ])
         const sendersData = await sendersRes.json()
         const templatesData = await templatesRes.json()
@@ -80,13 +94,45 @@ export default function SendEmailPage() {
         console.error("Failed to fetch data:", error)
       }
     }
-    fetchData()
-  }, [])
+    if (token) fetchData()
+  }, [token, API_URL])
+
+  // Handle Follow-up / Duplicate logic
+  useEffect(() => {
+    const fetchSourceCampaign = async (id: string, isFollowup: boolean) => {
+      try {
+        const res = await fetch(`${API_URL}/campaigns/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const result = await res.json()
+        if (result.success) {
+          const campaign = result.data
+          setRecipients(campaign.recipients || [])
+          setSelectedSender(campaign.sender?._id || campaign.sender || "")
+          setSelectedTemplate(campaign.template?._id || campaign.template || null)
+          
+          if (isFollowup) {
+            setSubject(`Re: ${campaign.subject}`)
+            setBody(`Following up on my previous email...\n\n---\n${campaign.html || ""}`)
+          } else {
+            setSubject(campaign.subject)
+            setBody(campaign.html || "")
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch source campaign:", error)
+      }
+    }
+
+    if (token && (followupId || duplicateId)) {
+      fetchSourceCampaign((followupId || duplicateId)!, !!followupId)
+    }
+  }, [token, followupId, duplicateId, API_URL])
 
   const addRecipient = (email: string) => {
-    const trimmedEmail = email.trim().toLowerCase()
-    if (trimmedEmail && !recipients.includes(trimmedEmail) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setRecipients([...recipients, trimmedEmail])
+    const trimmedEmail = (email || "").trim().toLowerCase()
+    if (trimmedEmail && recipients && !recipients.includes(trimmedEmail) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setRecipients([...(recipients || []), trimmedEmail])
       setRecipientInput("")
     }
   }
@@ -138,6 +184,7 @@ export default function SendEmailPage() {
         
         const uploadRes = await fetch(`${API_URL}/media/upload`, {
           method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
           body: formData
           // Note: Browser will automatically set Content-Type to multipart/form-data with boundary
         })
@@ -150,7 +197,10 @@ export default function SendEmailPage() {
       // 2. Create Campaign
       const campaignRes = await fetch(`${API_URL}/campaigns`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           name: `Campaign ${new Date().toLocaleString()}`,
           sender: selectedSender,
@@ -168,7 +218,8 @@ export default function SendEmailPage() {
 
       // 2. Launch Campaign
       const launchRes = await fetch(`${API_URL}/campaigns/${campaignData.data._id}/launch`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
       })
       const launchData = await launchRes.json()
 
@@ -303,7 +354,7 @@ export default function SendEmailPage() {
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Email subject line"
             />
-            {subject.includes("{{") && (
+            {subject?.includes("{{") && (
               <p className="text-xs text-primary">
                 Placeholders like {"{{role}}"} will be replaced with actual values
               </p>
@@ -476,5 +527,13 @@ export default function SendEmailPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function SendEmailPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SendEmailForm />
+    </Suspense>
   )
 }

@@ -38,13 +38,13 @@ export function ResumeUpload() {
     setUploadProgress(10)
 
     const formData = new FormData()
-    formData.append("resume", file)
+    formData.append("files", file)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/resumes/upload`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media/upload`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${(session as any).token || ''}`, // Note: Next-Auth session might vary, we'll see
+          Authorization: `Bearer ${(session?.user as any)?.accessToken || ''}`,
         },
         body: formData,
       })

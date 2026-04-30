@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface ISender extends Document {
   name: string;
@@ -15,6 +15,7 @@ export interface ISender extends Document {
     region?: string | null;
     expiryDate?: number | null;
   };
+  userId: Types.ObjectId;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -33,6 +34,7 @@ const senderSchema = new Schema<ISender>(
       type: Schema.Types.Mixed,
       required: true,
     },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

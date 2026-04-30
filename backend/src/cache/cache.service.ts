@@ -10,7 +10,7 @@ export const cacheService = {
   async set(key: string, value: any, ttl?: number): Promise<void> {
     const data = JSON.stringify(value);
     if (ttl) {
-      await redisClient.setex(key, ttl, data);
+      await redisClient.set(key, data, { EX: ttl });
     } else {
       await redisClient.set(key, data);
     }

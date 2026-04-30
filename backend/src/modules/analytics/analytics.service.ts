@@ -32,19 +32,33 @@ export class AnalyticsService {
       },
     ]);
 
-    // Format into a nicer object
-    const result: Record<string, number> = {
-      sent: 0,
-      failed: 0,
-      opened: 0,
-      clicked: 0,
-      bounced: 0,
+    const result = {
+      totalSent: 0,
+      totalFailed: 0,
+      totalOpened: 0,
+      totalClicked: 0,
+      totalBounced: 0,
+      successRate: 0,
     };
 
     stats.forEach((s) => {
-      result[s._id] = s.count;
+      if (s._id === 'sent') result.totalSent = s.count;
+      if (s._id === 'failed') result.totalFailed = s.count;
+      if (s._id === 'opened') result.totalOpened = s.count;
+      if (s._id === 'clicked') result.totalClicked = s.count;
+      if (s._id === 'bounced') result.totalBounced = s.count;
     });
 
+    if (result.totalSent > 0) {
+      result.successRate = ((result.totalSent - result.totalFailed) / result.totalSent) * 100;
+    }
+
     return result;
+  }
+
+  static async getEvents(campaignId: string) {
+    return await AnalyticsEvent.find({ campaignId })
+      .sort({ createdAt: -1 })
+      .limit(100);
   }
 }

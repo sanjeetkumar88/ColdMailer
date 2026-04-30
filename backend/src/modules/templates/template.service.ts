@@ -5,11 +5,11 @@ export class TemplateService {
     return await Template.create(data);
   }
 
-  static async getTemplates() {
-    return await Template.find();
+  static async getTemplates(userId: string) {
+    return await Template.find({ userId });
   }
 
-  static async getTemplateById(id: string) {
-    return await Template.findById(id);
+  static async getTemplateById(id: string, userId: string) {
+    return await Template.findOne({ _id: id, userId });
   }
 }

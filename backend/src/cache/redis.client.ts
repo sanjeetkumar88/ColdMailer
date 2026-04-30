@@ -1,16 +1,37 @@
+import { createClient } from 'redis';
 import Redis from 'ioredis';
 import { env } from '../config/env';
 
-export const redisClient = new Redis({
-  host: env.REDIS_HOST,
-  port: parseInt(env.REDIS_PORT, 10),
-  maxRetriesPerRequest: null, // Required for BullMQ
+const redisUrl = env.REDIS_URL;
+
+// Client for general cache (using 'redis' package as requested)
+export const redisClient = createClient({
+  url: redisUrl,
 });
 
 redisClient.on('error', (err) => {
-  console.error('❌ Redis Connection Error:', err);
+  console.error('❌ Redis Client Error:', err);
 });
 
-redisClient.on('connect', () => {
-  console.log('✅ Redis Connected');
+// Connect to Redis
+(async () => {
+  try {
+    await redisClient.connect();
+    console.log('✅ Redis Client Connected');
+  } catch (err) {
+    console.error('❌ Redis Connection Failed:', err);
+  }
+})();
+
+// ioredis instance for BullMQ compatibility
+export const ioredisClient = new Redis(redisUrl, {
+  maxRetriesPerRequest: null,
+});
+
+ioredisClient.on('error', (err) => {
+  console.error('❌ ioredis Connection Error:', err);
+});
+
+ioredisClient.on('connect', () => {
+  console.log('✅ ioredis Connected');
 });
