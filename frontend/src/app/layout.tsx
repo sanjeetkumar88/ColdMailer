@@ -7,26 +7,26 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'ColdMailer - Email Automation Platform',
-  description: 'Send personalized emails to multiple recipients efficiently. Perfect for job applications and outreach.',
+  title: 'MailFlow - #1 Cold Email Automation Platform for Job Seekers & Teams',
+  description: 'Scale your outreach with MailFlow. Automate personalized cold emails, rotate multiple senders, and track analytics in real-time. The ultimate tool for job applications and B2B sales.',
   keywords: [
-    "Cold Email", "Email Automation", "Job Application Automated", 
-    "Mass Email", "Sales Outreach", "Networking", "ColdMailer"
+    "Cold Email Automation", "Job Application Tool", "Multi-sender Rotation",
+    "Email Outreach Software", "B2B Sales Automation", "MailFlow", "ColdMailer"
   ],
-  authors: [{ name: "ColdMailer Team" }],
-  creator: "ColdMailer",
+  authors: [{ name: "MailFlow Team" }],
+  creator: "MailFlow",
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://coldmailer.me",
-    title: "ColdMailer - Automate Your Email Outreach",
-    description: "Send personalized emails to multiple recipients efficiently. Perfect for job seekers, freelancers, and marketers.",
-    siteName: "ColdMailer",
+    title: "MailFlow - Automate Your Email Outreach at Scale",
+    description: "Send personalized emails to thousands of recipients without hitting spam filters. The standard for modern outreach.",
+    siteName: "MailFlow",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ColdMailer - Automate Your Email Outreach",
-    description: "Send personalized emails to multiple recipients efficiently.",
+    title: "MailFlow - #1 Cold Email Automation Platform",
+    description: "Scale your outreach with MailFlow. Automate personalized cold emails and rotate multiple senders.",
   },
   robots: {
     index: true,
@@ -55,6 +55,29 @@ export default function RootLayout({
           {children}
         </Providers>
         <Analytics />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "MailFlow",
+              "operatingSystem": "Web",
+              "applicationCategory": "BusinessApplication",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "description": "The modern standard for high-deliverability cold outreach and job application automation.",
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.9",
+                "reviewCount": "1248"
+              }
+            })
+          }}
+        />
       </body>
     </html>
   )

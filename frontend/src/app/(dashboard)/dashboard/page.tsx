@@ -47,7 +47,9 @@ export default function DashboardPage() {
   const { data: session, status } = useSession()
   const [dashboardStats, setDashboardStats] = useState(initialStats)
   const [recentActivityData, setRecentActivityData] = useState(initialActivity)
+  const [resumes, setResumes] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isResumesLoading, setIsResumesLoading] = useState(true)
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
   const token = (session?.user as any)?.accessToken
@@ -135,17 +137,57 @@ export default function DashboardPage() {
     }
   }, [token, API_URL, status])
 
+  const fetchResumes = useCallback(async () => {
+    if (!token) return
+    setIsResumesLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/media`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setResumes(data.data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch resumes:", error)
+    } finally {
+      setIsResumesLoading(false)
+    }
+  }, [token, API_URL])
+
+  const handleDeleteResume = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this resume?")) return
+    try {
+      const res = await fetch(`${API_URL}/media/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Resume deleted")
+        fetchResumes()
+      } else {
+        toast.error(data.message || "Failed to delete")
+      }
+    } catch (error) {
+      toast.error("Failed to delete resume")
+    }
+  }
+
   useEffect(() => {
     if (token) {
       setIsLoading(true)
       fetchDashboardData()
+      fetchResumes()
       
-      const interval = setInterval(fetchDashboardData, 30000)
+      const interval = setInterval(() => {
+        fetchDashboardData()
+      }, 30000)
       return () => clearInterval(interval)
     } else if (status !== 'loading') {
       setIsLoading(false)
     }
-  }, [token, status, fetchDashboardData])
+  }, [token, status, fetchDashboardData, fetchResumes])
 
   const handleAction = async (action: string, activity: any) => {
     if (action === 'resend') {
@@ -390,7 +432,7 @@ export default function DashboardPage() {
             <CardDescription>Upload and manage your resumes for outreach</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResumeUpload />
+            <ResumeUpload onUploadSuccess={fetchResumes} />
           </CardContent>
         </Card>
         
@@ -400,7 +442,42 @@ export default function DashboardPage() {
             <CardDescription>Recently uploaded files</CardDescription>
           </CardHeader>
           <CardContent>
-             <p className="text-sm text-muted-foreground italic">Your resumes will appear here once uploaded.</p>
+            {isResumesLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : resumes.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">Your resumes will appear here once uploaded.</p>
+            ) : (
+              <div className="space-y-3">
+                {resumes.map((resume) => (
+                  <div key={resume._id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 group border border-transparent hover:border-primary/20 transition-all">
+                    <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{resume.originalName}</p>
+                      <p className="text-[10px] text-muted-foreground">{(resume.size / 1024 / 1024).toFixed(2)} MB • {new Date(resume.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                        <a href={resume.url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteResume(resume._id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

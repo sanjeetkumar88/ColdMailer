@@ -2,9 +2,9 @@ import { Request, Response } from 'express';
 import { AnalyticsService } from './analytics.service';
 import { asyncHandler } from '../../shared/utils/asyncHandler';
 
-export const getStats = asyncHandler(async (req: Request, res: Response) => {
+export const getStats = asyncHandler(async (req: any, res: Response) => {
   const { campaignId } = req.query;
-  const stats = await AnalyticsService.getStats(campaignId as string);
+  const stats = await AnalyticsService.getStats(campaignId as string, req.user.id);
   res.status(200).json({
     success: true,
     data: stats,
@@ -13,7 +13,7 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
 
 export const getEvents = asyncHandler(async (req: Request, res: Response) => {
   const { campaignId } = req.params;
-  const events = await AnalyticsService.getEvents(campaignId);
+  const events = await AnalyticsService.getEvents(campaignId as string);
   res.status(200).json({
     success: true,
     data: events,
@@ -25,8 +25,8 @@ export const trackOpen = asyncHandler(async (req: Request, res: Response) => {
   
   // Record the open event
   await AnalyticsService.recordEvent({
-    campaignId,
-    recipientEmail,
+    campaignId: campaignId as string,
+    recipientEmail: recipientEmail as string,
     type: 'opened'
   });
 

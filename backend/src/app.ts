@@ -10,10 +10,12 @@ import contactRoutes from './modules/contacts/contact.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import mediaRoutes from './modules/media/media.routes';
 
+import helmet from 'helmet';
 import { apiRateLimiter, authRateLimiter } from './shared/middleware/rate-limiter.middleware';
 
 const app = express();
 
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));

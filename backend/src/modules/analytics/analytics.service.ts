@@ -20,8 +20,18 @@ export class AnalyticsService {
     }
   }
 
-  static async getStats(campaignId?: string) {
-    const filter = campaignId ? { campaignId } : {};
+  static async getStats(campaignId?: string, userId?: string) {
+    let filter: any = {};
+    
+    if (campaignId) {
+      filter.campaignId = campaignId;
+    } else if (userId) {
+      const { Campaign } = await import('../campaigns/campaign.model');
+      const campaigns = await Campaign.find({ userId }).select('_id');
+      const campaignIds = campaigns.map(c => c._id);
+      filter.campaignId = { $in: campaignIds };
+    }
+
     const stats = await AnalyticsEvent.aggregate([
       { $match: filter },
       {

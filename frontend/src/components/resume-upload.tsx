@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 
-export function ResumeUpload() {
+export function ResumeUpload({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const { data: session } = useSession()
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -57,6 +57,7 @@ export function ResumeUpload() {
       setUploadProgress(100)
       toast.success("Resume uploaded successfully!")
       setFile(null)
+      if (onUploadSuccess) onUploadSuccess()
     } catch (error: any) {
       toast.error(error.message)
     } finally {

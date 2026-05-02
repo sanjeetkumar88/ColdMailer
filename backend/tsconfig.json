@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
     "target": "ESNext",
     "module": "CommonJS",
     "outDir": "./dist",
@@ -12,7 +11,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "ts-node": {
     "transpileOnly": true,
