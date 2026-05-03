@@ -8,8 +8,8 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://coldmailer.me'),
-  title: 'ColdMailer - #1 Cold Email Automation Platform for Job Seekers & Teams',
-  description: 'Scale your outreach with ColdMailer. Automate personalized cold emails, rotate multiple senders, and track analytics in real-time. The ultimate tool for job applications and B2B sales.',
+  title: 'ColdMailer | #1 Cold Email Automation Tool - Get 3x More Interviews',
+  description: 'The modern standard for high-deliverability cold outreach. Automate personalized emails, rotate senders to bypass spam, and land your dream job or scale B2B sales with AI-driven precision.',
   keywords: [
     "Cold Email Automation", "Job Application Tool", "Multi-sender Rotation",
     "Email Outreach Software", "B2B Sales Automation", "MailFlow", "ColdMailer",
@@ -24,8 +24,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://coldmailer.me",
-    title: "ColdMailer - Automate Your Email Outreach at Scale",
-    description: "Send personalized emails to thousands of recipients without hitting spam filters. The standard for modern outreach.",
+    title: "ColdMailer - Automate Your Email Outreach & Land More Interviews",
+    description: "Send personalized emails at scale without hitting spam filters. The ultimate tool for job seekers and growth teams.",
     siteName: "ColdMailer",
     images: [
       {
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ColdMailer - #1 Cold Email Automation Platform",
-    description: "Scale your outreach with ColdMailer. Automate personalized cold emails and rotate multiple senders.",
+    title: "ColdMailer | #1 Cold Email Automation Platform",
+    description: "Land more interviews and leads with ColdMailer. Automate personalized emails and rotate multiple senders with ease.",
     images: ["/og-image.png"],
   },
   robots: {
