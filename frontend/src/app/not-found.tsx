@@ -43,7 +43,7 @@ export default function NotFound() {
 
         <div className="mt-20 pt-12 border-t border-black/[0.03] flex items-center justify-center gap-2">
            <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-           <span className="text-[10px] font-black tracking-[0.2em] uppercase text-black/20">MailFlow Error Protocol 404</span>
+           <span className="text-[10px] font-black tracking-[0.2em] uppercase text-black/20">ColdMailer Error Protocol 404</span>
         </div>
       </motion.div>
     </div>

@@ -11,7 +11,7 @@ const router = Router();
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'mailflow-attachments',
+    folder: 'coldmailer-attachments',
     resource_type: 'auto',
   } as any,
 });

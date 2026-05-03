@@ -49,7 +49,7 @@ export function HomeContent() {
             <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-100 animate-float">
               <Mail className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-bold tracking-tighter">MailFlow</span>
+            <span className="text-2xl font-bold tracking-tighter">ColdMailer</span>
           </div>
           <nav className="hidden lg:flex items-center gap-10 text-sm font-bold uppercase tracking-widest text-black/40">
             <Link href="#features" className="hover:text-indigo-600 transition-colors">Features</Link>
@@ -203,14 +203,14 @@ export function HomeContent() {
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto text-center mb-32">
               <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-8 italic">One platform. Endless opportunities.</h2>
-              <p className="text-xl text-black/40 font-medium">Whether you're a job seeker looking for your dream role or a sales team scaling outreach, MailFlow is built for you.</p>
+              <p className="text-xl text-black/40 font-medium">Whether you're a job seeker looking for your dream role or a sales team scaling outreach, ColdMailer is built for you.</p>
             </div>
             
             <div className="grid md:grid-cols-2 gap-16">
               <div className="bg-[#f8f9ff] rounded-[3rem] p-16 relative overflow-hidden">
                 <Briefcase className="h-16 w-16 text-indigo-600 mb-10" />
                 <h3 className="text-3xl font-bold mb-6">For Job Seekers & Professionals</h3>
-                <p className="text-black/50 mb-10 leading-relaxed text-lg">In today's competitive job market, applying manually isn't enough. MailFlow's automated outreach lets you reach 50+ recruiters daily with uniquely personalized messages, increasing your interview rate by up to 300%.</p>
+                <p className="text-black/50 mb-10 leading-relaxed text-lg">In today's competitive job market, applying manually isn't enough. ColdMailer's automated outreach lets you reach 50+ recruiters daily with uniquely personalized messages, increasing your interview rate by up to 300%.</p>
                 <ul className="space-y-4">
                   {["Automated follow-up sequences", "AI-driven resume tailoring", "Recruiter relationship management"].map((item, idx) => (
                     <li key={idx} className="flex items-center gap-3 font-bold text-sm text-indigo-600 uppercase tracking-widest">
@@ -276,20 +276,20 @@ export function HomeContent() {
             <div className="space-y-8 text-left">
               {[
                 { 
-                  q: "How does MailFlow protect my email domain reputation?", 
-                  a: "MailFlow uses a proprietary 'Multi-Sender Rotation' engine. Instead of sending 500 emails from one account, it sends 10 emails from 50 different accounts. This mimics natural human behavior and prevents your domain from being flagged as a spammer by Gmail and Outlook."
+                  q: "How does ColdMailer protect my email domain reputation?", 
+                  a: "ColdMailer uses a proprietary 'Multi-Sender Rotation' engine. Instead of sending 500 emails from one account, it sends 10 emails from 50 different accounts. This mimics natural human behavior and prevents your domain from being flagged as a spammer by Gmail and Outlook."
                 },
                 { 
-                  q: "Can I use MailFlow for job applications?", 
-                  a: "Absolutely. MailFlow was originally designed for high-end professional outreach. You can upload a list of recruiters, use our dynamic variables to mention specific job titles or company values, and automate your follow-ups to stay on top of their inbox."
+                  q: "Can I use ColdMailer for job applications?", 
+                  a: "Absolutely. ColdMailer was originally designed for high-end professional outreach. You can upload a list of recruiters, use our dynamic variables to mention specific job titles or company values, and automate your follow-ups to stay on top of their inbox."
                 },
                 { 
-                  q: "Do I need technical skills to set up MailFlow?", 
+                  q: "Do I need technical skills to set up ColdMailer?", 
                   a: "No. Our dashboard is designed for ease of use. Connecting a sender takes 30 seconds via OAuth (Google/Microsoft), and our template editor works just like any modern document editor."
                 },
                 { 
-                  q: "What is the difference between MailFlow and Mailchimp?", 
-                  a: "Mailchimp is for newsletters (marketing emails). MailFlow is for cold outreach (sales/networking). Mailchimp emails land in the 'Promotions' tab; MailFlow emails land in the 'Primary' inbox because they are sent via your actual mail server."
+                  q: "What is the difference between ColdMailer and Mailchimp?", 
+                  a: "Mailchimp is for newsletters (marketing emails). ColdMailer is for cold outreach (sales/networking). Mailchimp emails land in the 'Promotions' tab; ColdMailer emails land in the 'Primary' inbox because they are sent via your actual mail server."
                 },
                 { 
                   q: "Is there a limit to how many emails I can send?", 
@@ -317,7 +317,7 @@ export function HomeContent() {
               <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-24 italic">Loved by the world's most ambitious.</h2>
               <div className="grid md:grid-cols-3 gap-12 text-left text-white">
                 {[
-                  { name: "Sanjeet Kumar", role: "Software Engineer", quote: "MailFlow helped me land 12 interviews in 2 weeks. The personalization variables are a game changer for job hunters." },
+                  { name: "Sanjeet Kumar", role: "Software Engineer", quote: "ColdMailer helped me land 12 interviews in 2 weeks. The personalization variables are a game changer for job hunters." },
                   { name: "Sarah Chen", role: "Growth Lead @ Vortex", quote: "We scaled our B2B outreach with zero drop in deliverability. It's the most stable platform we've ever used." },
                   { name: "James Wilson", role: "Tech Founder", quote: "Intuitive, fast, and secure. The UI alone makes me want to send more emails. Truly a next-gen tool." }
                 ].map((t, i) => (
@@ -362,7 +362,7 @@ export function HomeContent() {
                 <div className="bg-indigo-600 p-2 rounded-xl">
                   <Mail className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-3xl font-bold tracking-tighter">MailFlow</span>
+                <span className="text-3xl font-bold tracking-tighter">ColdMailer</span>
               </div>
               <p className="text-2xl font-medium text-black/30 leading-relaxed mb-12 max-w-sm">
                 The modern standard for high-deliverability cold outreach and job application automation.
@@ -404,7 +404,7 @@ export function HomeContent() {
           
           <div className="pt-16 border-t border-black/[0.03] flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-10">
-               <p className="text-[10px] font-black tracking-[0.2em] uppercase text-black/20">© 2026 MAILFLOW PLATFORM. ALL RIGHTS RESERVED.</p>
+               <p className="text-[10px] font-black tracking-[0.2em] uppercase text-black/20">© 2026 COLDMAILER PLATFORM. ALL RIGHTS RESERVED.</p>
                <div className="hidden md:flex gap-6 text-[10px] font-black tracking-[0.2em] uppercase text-black/20">
                   <Link href="#" className="hover:text-black">Privacy</Link>
                   <Link href="#" className="hover:text-black">Terms</Link>
