@@ -91,11 +91,11 @@ export function HomeContent() {
               
               <motion.h1 variants={fadeIn} className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-12 leading-[0.95] text-gradient">
                 Cold email <br />
-                <span className="text-indigo-600 italic">mastery.</span>
+                <span className="text-indigo-600 italic">automation.</span>
               </motion.h1>
               
               <motion.p variants={fadeIn} className="text-lg md:text-2xl text-black/40 mb-16 max-w-2xl mx-auto leading-relaxed font-medium">
-                The modern standard for high-volume, personalized outreach. Rotate senders, bypass filters, and land every job interview with AI-driven precision.
+                The modern standard for high-volume, personalized outreach. Rotate multiple senders, bypass spam filters, and land every job interview with AI-driven precision.
               </motion.p>
               
               <motion.div variants={fadeIn} className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-32">
@@ -210,11 +210,11 @@ export function HomeContent() {
               <div className="bg-[#f8f9ff] rounded-[3rem] p-16 relative overflow-hidden">
                 <Briefcase className="h-16 w-16 text-indigo-600 mb-10" />
                 <h3 className="text-3xl font-bold mb-6">For Job Seekers & Professionals</h3>
-                <p className="text-black/50 mb-10 leading-relaxed text-lg">In today's competitive market, applying manually isn't enough. MailFlow lets you reach 50+ recruiters daily with uniquely personalized messages, increasing your interview rate by up to 300%.</p>
+                <p className="text-black/50 mb-10 leading-relaxed text-lg">In today's competitive job market, applying manually isn't enough. MailFlow's automated outreach lets you reach 50+ recruiters daily with uniquely personalized messages, increasing your interview rate by up to 300%.</p>
                 <ul className="space-y-4">
-                  {["Automated follow-ups", "AI-driven resume tailoring", "Recruiter contact management"].map((item, idx) => (
+                  {["Automated follow-up sequences", "AI-driven resume tailoring", "Recruiter relationship management"].map((item, idx) => (
                     <li key={idx} className="flex items-center gap-3 font-bold text-sm text-indigo-600 uppercase tracking-widest">
-                      <CheckCircle2 className="h-5 w-5" />
+                      <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                       {item}
                     </li>
                   ))}
@@ -222,12 +222,12 @@ export function HomeContent() {
               </div>
               <div className="bg-[#fffcf8] rounded-[3rem] p-16 relative overflow-hidden">
                 <TrendingUp className="h-16 w-16 text-amber-600 mb-10" />
-                <h3 className="text-3xl font-bold mb-6">For Sales & Growth Teams</h3>
-                <p className="text-black/50 mb-10 leading-relaxed text-lg">Scale your B2B lead generation without hitting spam folders. Our multi-sender rotation engine mimics human behavior, ensuring your emails land in the primary inbox every time.</p>
+                <h3 className="text-3xl font-bold mb-6">For B2B Sales & Growth Teams</h3>
+                <p className="text-black/50 mb-10 leading-relaxed text-lg">Scale your B2B lead generation and prospecting without hitting spam folders. Our multi-sender rotation engine mimics human behavior, ensuring your sales outreach lands in the primary inbox every time.</p>
                 <ul className="space-y-4">
-                  {["Domain rotation & warming", "A/B testing subject lines", "Detailed reply tracking"].map((item, idx) => (
+                  {["Domain rotation & warming", "A/B testing email templates", "Detailed reply tracking analytics"].map((item, idx) => (
                     <li key={idx} className="flex items-center gap-3 font-bold text-sm text-amber-600 uppercase tracking-widest">
-                      <CheckCircle2 className="h-5 w-5" />
+                      <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                       {item}
                     </li>
                   ))}

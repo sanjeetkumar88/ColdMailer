@@ -7,12 +7,17 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://coldmailer.me'),
   title: 'MailFlow - #1 Cold Email Automation Platform for Job Seekers & Teams',
   description: 'Scale your outreach with MailFlow. Automate personalized cold emails, rotate multiple senders, and track analytics in real-time. The ultimate tool for job applications and B2B sales.',
   keywords: [
     "Cold Email Automation", "Job Application Tool", "Multi-sender Rotation",
-    "Email Outreach Software", "B2B Sales Automation", "MailFlow", "ColdMailer"
+    "Email Outreach Software", "B2B Sales Automation", "MailFlow", "ColdMailer",
+    "Recruiter Outreach", "Automated Job Applications", "Sales Prospecting Tool"
   ],
+  alternates: {
+    canonical: 'https://coldmailer.me',
+  },
   authors: [{ name: "MailFlow Team" }],
   creator: "MailFlow",
   openGraph: {
@@ -22,11 +27,20 @@ export const metadata: Metadata = {
     title: "MailFlow - Automate Your Email Outreach at Scale",
     description: "Send personalized emails to thousands of recipients without hitting spam filters. The standard for modern outreach.",
     siteName: "MailFlow",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "MailFlow Dashboard Preview",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "MailFlow - #1 Cold Email Automation Platform",
     description: "Scale your outreach with MailFlow. Automate personalized cold emails and rotate multiple senders.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -62,6 +76,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
               "name": "MailFlow",
+              "url": "https://coldmailer.me",
               "operatingSystem": "Web",
               "applicationCategory": "BusinessApplication",
               "offers": {
@@ -69,7 +84,14 @@ export default function RootLayout({
                 "price": "0",
                 "priceCurrency": "USD"
               },
-              "description": "The modern standard for high-deliverability cold outreach and job application automation.",
+              "description": "The modern standard for high-deliverability cold outreach and job application automation. Scale your networking with multi-sender rotation and AI-driven personalization.",
+              "featureList": [
+                "Multi-sender Rotation",
+                "AI-driven Personalization",
+                "Automated Follow-ups",
+                "Real-time Analytics",
+                "Secure SMTP/OAuth Integration"
+              ],
               "aggregateRating": {
                 "@type": "AggregateRating",
                 "ratingValue": "4.9",
