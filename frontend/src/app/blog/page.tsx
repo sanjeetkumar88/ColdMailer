@@ -1,20 +1,13 @@
-"use client"
-
 import Link from "next/link"
-import { motion } from "framer-motion"
-import { Mail, Search, ArrowRight, Clock, User, ChevronRight } from "lucide-react"
+import { Mail, Search, ArrowRight, Clock, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { blogPosts } from "@/lib/blog-data"
 import { Badge } from "@/components/ui/badge"
+import { FadeIn } from "@/components/ui/fade-in"
+
+export const revalidate = 3600 // ISR: Revalidate every hour
 
 export default function BlogPage() {
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
-  }
-
   return (
     <div className="flex flex-col min-h-screen bg-[#fafafa] text-[#1a1a1a] selection:bg-indigo-100 overflow-x-hidden">
       {/* Noise Overlay */}
@@ -52,13 +45,17 @@ export default function BlogPage() {
         <div className="container mx-auto px-6">
           {/* Hero Section */}
           <section className="max-w-4xl mx-auto text-center mb-32">
-            <motion.h1 variants={fadeIn} initial="initial" whileInView="whileInView" className="text-6xl md:text-8xl font-bold tracking-tighter mb-8 leading-[0.95] text-gradient">
-               Outreach <br />
-               <span className="text-indigo-600 italic">Insights.</span>
-            </motion.h1>
-            <motion.p variants={fadeIn} initial="initial" whileInView="whileInView" className="text-xl text-black/40 font-medium max-w-2xl mx-auto">
-              Master the art of cold email, recruiter outreach, and career growth with our latest guides and articles.
-            </motion.p>
+            <FadeIn>
+              <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-8 leading-[0.95] text-gradient">
+                 Outreach <br />
+                 <span className="text-indigo-600 italic">Insights.</span>
+              </h1>
+            </FadeIn>
+            <FadeIn delay={0.2}>
+              <p className="text-xl text-black/40 font-medium max-w-2xl mx-auto">
+                Master the art of cold email, recruiter outreach, and career growth with our latest guides and articles.
+              </p>
+            </FadeIn>
           </section>
 
           {/* Search Bar */}
@@ -76,43 +73,38 @@ export default function BlogPage() {
           {/* Blog Grid */}
           <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
             {blogPosts.map((post, i) => (
-              <motion.div 
-                key={post.slug}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="group bg-white border border-black/[0.03] rounded-[3rem] p-10 hover:shadow-2xl transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-8">
-                    <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-none px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">{post.category}</Badge>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-black/20 uppercase tracking-widest">
-                       <Clock className="h-3 w-3" />
-                       {post.readTime}
+              <FadeIn key={post.slug} delay={i * 0.1}>
+                <div className="group bg-white border border-black/[0.03] rounded-[3rem] p-10 hover:shadow-2xl transition-all flex flex-col justify-between h-full">
+                  <div>
+                    <div className="flex justify-between items-center mb-8">
+                      <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-none px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">{post.category}</Badge>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-black/20 uppercase tracking-widest">
+                         <Clock className="h-3 w-3" />
+                         {post.readTime}
+                      </div>
                     </div>
+                    <Link href={`/blog/${post.slug}`}>
+                      <h2 className="text-2xl font-bold mb-6 group-hover:text-indigo-600 transition-colors leading-tight">
+                        {post.title}
+                      </h2>
+                    </Link>
+                    <p className="text-black/40 text-sm font-medium leading-relaxed mb-10 line-clamp-3">
+                      {post.description}
+                    </p>
                   </div>
-                  <Link href={`/blog/${post.slug}`}>
-                    <h2 className="text-2xl font-bold mb-6 group-hover:text-indigo-600 transition-colors leading-tight">
-                      {post.title}
-                    </h2>
-                  </Link>
-                  <p className="text-black/40 text-sm font-medium leading-relaxed mb-10 line-clamp-3">
-                    {post.description}
-                  </p>
-                </div>
-                <div className="flex items-center justify-between pt-8 border-t border-black/[0.03]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                       <User className="h-4 w-4 text-indigo-600" />
+                  <div className="flex items-center justify-between pt-8 border-t border-black/[0.03]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                         <User className="h-4 w-4 text-indigo-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">{post.author}</span>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">{post.author}</span>
+                    <Link href={`/blog/${post.slug}`} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-600 group-hover:gap-4 transition-all">
+                       Read <ArrowRight className="h-4 w-4" />
+                    </Link>
                   </div>
-                  <Link href={`/blog/${post.slug}`} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-600 group-hover:gap-4 transition-all">
-                     Read <ArrowRight className="h-4 w-4" />
-                  </Link>
                 </div>
-              </motion.div>
+              </FadeIn>
             ))}
           </section>
         </div>

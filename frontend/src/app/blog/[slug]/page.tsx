@@ -5,6 +5,8 @@ import { blogPosts } from "@/lib/blog-data"
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
 
+export const revalidate = 3600 // ISR: Revalidate every hour
+
 interface PageProps {
   params: Promise<{ slug: string }>
 }

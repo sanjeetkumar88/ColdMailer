@@ -1,14 +1,17 @@
 "use client"
 
 import { HelpCircle } from "lucide-react"
+import { FadeIn } from "@/components/ui/fade-in"
 
 export function FAQ() {
   return (
     <section id="faq" className="py-40 bg-white">
       <div className="container mx-auto px-6 max-w-4xl">
-        <div className="text-center mb-24">
-           <h2 className="text-4xl md:text-6xl font-bold tracking-tighter italic">Everything you need to know.</h2>
-        </div>
+        <FadeIn>
+          <div className="text-center mb-24">
+             <h2 className="text-4xl md:text-6xl font-bold tracking-tighter italic">Everything you need to know.</h2>
+          </div>
+        </FadeIn>
         
         <div className="space-y-8 text-left">
           {[
@@ -41,18 +44,21 @@ export function FAQ() {
               a: "On the Starter plan, you can send up to 1,000 emails per month. Our Pro plan offers unlimited sending, restricted only by the daily limits of your connected email providers (usually 2,000/day per Gmail account)."
             }
           ].map((faq, i) => (
-            <div key={i} className="p-10 bg-[#fafafa] border border-black/[0.03] rounded-[2.5rem] hover:bg-white transition-all">
-              <div className="flex items-start gap-4">
-                 <HelpCircle className="h-6 w-6 text-indigo-600 shrink-0 mt-1" />
-                 <div>
-                    <h4 className="text-xl font-bold mb-4">{faq.q}</h4>
-                    <p className="text-black/40 leading-relaxed font-medium">{faq.a}</p>
-                 </div>
+            <FadeIn key={i} delay={i * 0.05}>
+              <div className="p-10 bg-[#fafafa] border border-black/[0.03] rounded-[2.5rem] hover:bg-white transition-all">
+                <div className="flex items-start gap-4">
+                   <HelpCircle className="h-6 w-6 text-indigo-600 shrink-0 mt-1" />
+                   <div>
+                      <h4 className="text-xl font-bold mb-4">{faq.q}</h4>
+                      <p className="text-black/40 leading-relaxed font-medium">{faq.a}</p>
+                   </div>
+                </div>
               </div>
-            </div>
+            </FadeIn>
           ))}
         </div>
       </div>
     </section>
   )
 }
+

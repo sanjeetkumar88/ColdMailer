@@ -5,48 +5,52 @@ import { motion, MotionValue } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Sparkles, PlayCircle, Command, Mail } from "lucide-react"
 
+import { FadeIn } from "@/components/ui/fade-in"
+
 interface HeroProps {
-  y1: MotionValue<number>
-  fadeIn: any
-  stagger: any
+  y1?: any
+  fadeIn?: any
+  stagger?: any
 }
 
 export function Hero({ y1, fadeIn, stagger }: HeroProps) {
   return (
     <section className="relative pt-40 pb-32">
       <div className="container mx-auto px-6 text-center">
-        <motion.div 
-          initial="initial"
-          whileInView="whileInView"
-          viewport={{ once: true }}
-          variants={stagger}
-          className="max-w-5xl mx-auto"
-        >
-          <motion.div variants={fadeIn} className="inline-flex items-center rounded-full px-5 py-2 text-xs font-bold tracking-widest bg-white border border-black/[0.05] shadow-sm mb-12 uppercase">
-            <Sparkles className="mr-2 h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-            #1 Automation Tool for Modern Outreach
-          </motion.div>
+        <div className="max-w-5xl mx-auto">
+          <FadeIn>
+            <div className="inline-flex items-center rounded-full px-5 py-2 text-xs font-bold tracking-widest bg-white border border-black/[0.05] shadow-sm mb-12 uppercase">
+              <Sparkles className="mr-2 h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+              #1 Automation Tool for Modern Outreach
+            </div>
+          </FadeIn>
           
-          <motion.h1 variants={fadeIn} className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-12 leading-[0.95] text-gradient">
-            Cold email <br />
-            <span className="text-indigo-600 italic">automation.</span>
-          </motion.h1>
+          <FadeIn delay={0.1}>
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-12 leading-[0.95] text-gradient">
+              Cold email <br />
+              <span className="text-indigo-600 italic">automation.</span>
+            </h1>
+          </FadeIn>
           
-          <motion.p variants={fadeIn} className="text-lg md:text-2xl text-black/40 mb-16 max-w-2xl mx-auto leading-relaxed font-medium">
-            The modern standard for high-volume, personalized outreach. Rotate multiple senders, bypass spam filters, and land every job interview with AI-driven precision.
-          </motion.p>
+          <FadeIn delay={0.2}>
+            <p className="text-lg md:text-2xl text-black/40 mb-16 max-w-2xl mx-auto leading-relaxed font-medium">
+              The modern standard for high-volume, personalized outreach. Rotate multiple senders, bypass spam filters, and land every job interview with AI-driven precision.
+            </p>
+          </FadeIn>
           
-          <motion.div variants={fadeIn} className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-32">
-            <Link href="/login" className="w-full sm:w-auto">
-              <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl h-16 px-12 text-xl font-bold shadow-2xl shadow-indigo-200 w-full active:scale-95 transition-all">
-                Start Sending Free
+          <FadeIn delay={0.3}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-32">
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl h-16 px-12 text-xl font-bold shadow-2xl shadow-indigo-200 w-full active:scale-95 transition-all">
+                  Start Sending Free
+                </Button>
+              </Link>
+              <Button size="lg" variant="ghost" className="rounded-2xl h-16 px-12 text-xl font-bold hover:bg-black/5 w-full sm:w-auto gap-2">
+                <PlayCircle className="h-6 w-6" />
+                Watch Demo
               </Button>
-            </Link>
-            <Button size="lg" variant="ghost" className="rounded-2xl h-16 px-12 text-xl font-bold hover:bg-black/5 w-full sm:w-auto gap-2">
-              <PlayCircle className="h-6 w-6" />
-              Watch Demo
-            </Button>
-          </motion.div>
+            </div>
+          </FadeIn>
 
           {/* Dashboard Preview */}
           <motion.div 
@@ -131,7 +135,7 @@ export function Hero({ y1, fadeIn, stagger }: HeroProps) {
               </div>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )
