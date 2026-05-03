@@ -73,9 +73,9 @@ export function HomeContent() {
           </div>
           <nav className="hidden lg:flex items-center gap-10 text-sm font-bold uppercase tracking-widest text-black/40">
             <Link href="#features" className="hover:text-indigo-600 transition-colors">Features</Link>
-            <Link href="#use-cases" className="hover:text-indigo-600 transition-colors">Use Cases</Link>
+            <Link href="/about" className="hover:text-indigo-600 transition-colors">About</Link>
+            <Link href="/blog" className="hover:text-indigo-600 transition-colors">Blog</Link>
             <Link href="#faq" className="hover:text-indigo-600 transition-colors">FAQ</Link>
-            <Link href="#pricing" className="hover:text-indigo-600 transition-colors">Pricing</Link>
           </nav>
           <div className="flex items-center gap-4">
             <Link href="/login" className="hidden sm:block">
@@ -145,6 +145,8 @@ export function HomeContent() {
                   <li><Link href="#" className="hover:text-indigo-600 transition-colors">Deliverability</Link></li>
                   <li><Link href="#" className="hover:text-indigo-600 transition-colors">Sender Rotation</Link></li>
                   <li><Link href="#" className="hover:text-indigo-600 transition-colors">AI Writing</Link></li>
+                  <li><Link href="/about" className="hover:text-indigo-600 transition-colors">About Us</Link></li>
+                  <li><Link href="/blog" className="hover:text-indigo-600 transition-colors">Blog</Link></li>
                   <li><Link href="#" className="hover:text-indigo-600 transition-colors">Pricing</Link></li>
                 </ul>
               </div>
