@@ -2,23 +2,21 @@ module.exports = {
   apps: [
     {
       name: "mailflow-api",
-      script: "src/server.ts",
-      interpreter: "node",
-      interpreter_args: "-r ts-node/register --max-old-space-size=4096",
+      script: "dist/server.js",
       env: {
-        NODE_ENV: "development",
+        NODE_ENV: "production",
       },
       watch: false,
+      max_memory_restart: "400M"
     },
     {
       name: "mailflow-worker",
-      script: "src/worker.ts",
-      interpreter: "node",
-      interpreter_args: "-r ts-node/register --max-old-space-size=4096",
+      script: "dist/worker.js",
       env: {
-        NODE_ENV: "development",
+        NODE_ENV: "production",
       },
       watch: false,
+      max_memory_restart: "400M"
     }
   ]
 };

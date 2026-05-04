@@ -20,9 +20,10 @@ RUN npm install --omit=dev
 
 # Copy compiled code from builder stage
 COPY --from=builder /app/dist ./dist
-# Copy other necessary files if any (e.g., assets, views)
-# COPY --from=builder /app/src/views ./dist/views
+# Copy ecosystem config for PM2
+COPY --from=builder /app/ecosystem.config.js ./
 
 EXPOSE 5000
 
-CMD ["npm", "run", "start:prod"]
+# Run both API and Worker using PM2
+CMD ["npx", "pm2-runtime", "ecosystem.config.js"]
