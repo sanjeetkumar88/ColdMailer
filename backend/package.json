@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "nodemon --exec \"node --max-old-space-size=4096 -r ts-node/register\" src/server.ts",
     "worker:dev": "nodemon --exec \"node --max-old-space-size=4096 -r ts-node/register\" src/worker.ts",
+    "build": "tsc",
     "start": "ts-node src/server.ts",
+    "start:prod": "node dist/server.js",
     "worker:start": "ts-node src/worker.ts",
+    "worker:start:prod": "node dist/worker.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

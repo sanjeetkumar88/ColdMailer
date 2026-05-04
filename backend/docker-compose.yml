@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: mailflow-api
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/MailFlow
+      - REDIS_URL=redis://redis:6379
+    restart: always
+    depends_on:
+      - mongodb
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+      target: production
+    container_name: mailflow-worker
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/MailFlow
+      - REDIS_URL=redis://redis:6379
+    restart: always
+    depends_on:
+      - api
+      - mongodb
+      - redis
+
+  mongodb:
+    image: mongo:latest
+    container_name: mailflow-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: mailflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: always
+
+volumes:
+  mongo-data:
+  redis-data:
