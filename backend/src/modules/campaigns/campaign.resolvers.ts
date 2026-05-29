@@ -77,7 +77,7 @@ export const campaignResolvers = {
       return {
         id: campaign._id.toString(),
         name: campaign.name,
-        subject: campaign.subject,
+        subject: (campaign as any).subject,
         recipients: campaign.recipients,
         status: campaign.status,
         sentCount: campaign.sentCount,
