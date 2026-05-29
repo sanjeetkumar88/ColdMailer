@@ -66,6 +66,23 @@ export default function SettingsPage() {
   
   // SMTP State
   const [authMethod, setAuthMethod] = useState<"oauth" | "app-password" | "smtp">("oauth")
+  const [smtpPreset, setSmtpPreset] = useState("other")
+  
+  const SMTP_PRESETS = {
+    gmail: { name: "Gmail", host: "smtp.gmail.com", port: "587" },
+    outlook: { name: "Outlook / Office 365", host: "smtp-mail.outlook.com", port: "587" },
+    yahoo: { name: "Yahoo Mail", host: "smtp.mail.yahoo.com", port: "587" },
+    zoho: { name: "Zoho Mail", host: "smtp.zoho.com", port: "465" },
+    other: { name: "Custom / Other", host: "", port: "587" }
+  }
+
+  const handleSmtpPresetChange = (value: string) => {
+    setSmtpPreset(value)
+    if (value !== "other") {
+      const preset = SMTP_PRESETS[value as keyof typeof SMTP_PRESETS]
+      setSmtpForm(prev => ({ ...prev, host: preset.host, port: preset.port }))
+    }
+  }
   const [smtpForm, setSmtpForm] = useState({
     name: "",
     email: "",
@@ -580,12 +597,28 @@ export default function SettingsPage() {
                       />
                     </div>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Email Provider (Preset Settings)</Label>
+                    <Select value={smtpPreset} onValueChange={handleSmtpPresetChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(SMTP_PRESETS).map(([key, config]) => (
+                          <SelectItem key={key} value={key}>{config.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1 col-span-2">
                       <Label>SMTP Host</Label>
                       <Input 
                         placeholder="smtp.example.com" 
                         value={smtpForm.host} 
+                        disabled={smtpPreset !== "other"}
                         onChange={(e) => setSmtpForm({...smtpForm, host: e.target.value})} 
                       />
                     </div>
@@ -594,6 +627,7 @@ export default function SettingsPage() {
                       <Input 
                         placeholder="465 or 587" 
                         value={smtpForm.port} 
+                        disabled={smtpPreset !== "other"}
                         onChange={(e) => setSmtpForm({...smtpForm, port: e.target.value})} 
                       />
                     </div>
