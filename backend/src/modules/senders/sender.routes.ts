@@ -9,6 +9,7 @@ const router = Router();
 router.get('/', protect, senderController.getSenders);
 router.get('/:id', protect, senderController.getSenderById);
 router.delete('/:id', protect, senderController.deleteSender);
+router.post('/smtp', protect, senderController.createSmtpSender);
 
 router.get('/google/auth', protect, (req: any, res: Response) => {
   const url = SenderAuthService.getAuthUrl(req.user.id);

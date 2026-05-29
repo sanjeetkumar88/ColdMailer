@@ -43,9 +43,6 @@ export function ResumeUpload({ onUploadSuccess }: { onUploadSuccess?: () => void
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media/upload`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${(session?.user as any)?.accessToken || ''}`,
-        },
         body: formData,
       })
 

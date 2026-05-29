@@ -25,6 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -63,6 +64,7 @@ function SendEmailForm() {
   const [attachments, setAttachments] = useState<File[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [includeUnsubscribe, setIncludeUnsubscribe] = useState(true)
   const { data: session } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -75,10 +77,10 @@ function SendEmailForm() {
       try {
         const [sendersRes, templatesRes] = await Promise.all([
           fetch(`${API_URL}/senders`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            
           }),
           fetch(`${API_URL}/templates`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            
           })
         ])
         const sendersData = await sendersRes.json()
@@ -102,7 +104,7 @@ function SendEmailForm() {
     const fetchSourceCampaign = async (id: string, isFollowup: boolean) => {
       try {
         const res = await fetch(`${API_URL}/campaigns/${id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         })
         const result = await res.json()
         if (result.success) {
@@ -184,7 +186,6 @@ function SendEmailForm() {
         
         const uploadRes = await fetch(`${API_URL}/media/upload`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
           body: formData
         })
         
@@ -197,12 +198,16 @@ function SendEmailForm() {
         attachmentUrls = uploadData.data
       }
 
+      const finalBody = includeUnsubscribe 
+        ? `${body}\n\n---\nP.S. If you're not the right person for this, or don't want to hear from me again, just let me know.`
+        : body
+
       // 2. Create Campaign
       const campaignRes = await fetch(`${API_URL}/campaigns`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          
         },
         body: JSON.stringify({
           name: `Campaign ${new Date().toLocaleString()}`,
@@ -210,7 +215,7 @@ function SendEmailForm() {
           template: selectedTemplate || (templates.length > 0 ? templates[0]._id : undefined),
           recipients,
           subject,
-          html: body,
+          html: finalBody,
           attachments: attachmentUrls,
           status: 'draft'
         })
@@ -222,7 +227,7 @@ function SendEmailForm() {
       // 2. Launch Campaign
       const launchRes = await fetch(`${API_URL}/campaigns/${campaignData.data._id}/launch`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        
       })
       const launchData = await launchRes.json()
 
@@ -444,6 +449,20 @@ function SendEmailForm() {
             </Button>
           </div>
 
+          {/* Unsubscribe Option */}
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label className="text-base">Include Opt-Out (Unsubscribe) Text</Label>
+              <CardDescription>
+                Automatically appends a soft opt-out message to the bottom of the email to protect domain reputation and avoid spam reports.
+              </CardDescription>
+            </div>
+            <Switch
+              checked={includeUnsubscribe}
+              onCheckedChange={setIncludeUnsubscribe}
+            />
+          </div>
+
           <Separator />
 
           {/* Actions */}
@@ -482,6 +501,12 @@ function SendEmailForm() {
                     <div className="text-sm text-muted-foreground">Message:</div>
                     <div className="whitespace-pre-wrap text-sm bg-muted/30 p-4 rounded-lg">
                       {body || "No message content"}
+                      {includeUnsubscribe && (
+                        <div className="mt-4 text-muted-foreground">
+                          ---<br />
+                          P.S. If you're not the right person for this, or don't want to hear from me again, just let me know.
+                        </div>
+                      )}
                     </div>
                   </div>
                   {attachments.length > 0 && (

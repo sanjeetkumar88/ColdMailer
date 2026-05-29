@@ -3,6 +3,7 @@ import { redisClient, ioredisClient } from '../cache/redis.client';
 import { getProvider } from '../providers';
 import { Sender } from '../modules/senders/sender.model';
 import { Template } from '../modules/templates/template.model';
+import { Contact } from '../modules/contacts/contact.model';
 import { renderTemplate } from '../shared/utils/template.engine';
 import { emitter } from '../events/emitter';
 import { EmailEvent } from '../events/events.enum';
@@ -32,10 +33,17 @@ export const emailWorker = new Worker(
 
     if (!template) throw new Error(`Template ${templateId} not found`);
 
+    // Fetch contact for personalization
+    const contact = await Contact.findOne({ email: recipientEmail }).lean();
+
     // Render template
     const { subject, html, text } = renderTemplate(template, {
       ...variables,
       email: recipientEmail,
+      firstName: contact?.firstName || '',
+      lastName: contact?.lastName || '',
+      name: contact?.firstName ? `${contact.firstName} ${contact.lastName || ''}`.trim() : '',
+      ...(contact?.metadata || {}) // Spread any custom fields like company, role
     });
 
     // Inject tracking pixel

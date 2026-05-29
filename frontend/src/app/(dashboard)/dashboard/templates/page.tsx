@@ -20,6 +20,7 @@ import {
   List,
   Link2
 } from "lucide-react"
+import axios from "axios"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -124,21 +125,32 @@ export default function TemplatesPage() {
   const token = (session?.user as any)?.accessToken
 
   const fetchTemplates = async () => {
-    if (!token) return
     try {
-      const res = await fetch(`${API_URL}/templates`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await axios.post(`/api/graphql-proxy`, {
+        query: `
+          query {
+            templates {
+              id
+              name
+              subject
+              html
+              createdAt
+            }
+          }
+        `
       })
-      const data = await res.json()
-      if (data.success) {
-        setTemplates(data.data.map((t: any) => ({
-          id: t._id,
+      const { data, errors } = res.data
+      if (errors) {
+        console.error("GraphQL errors:", errors)
+      } else if (data?.templates) {
+        setTemplates(data.templates.map((t: any) => ({
+          id: t.id,
           name: t.name,
           subject: t.subject,
-          body: t.html || t.text || "",
+          body: t.html || "",
           usageCount: 0,
           lastUsed: "Never",
-          createdAt: new Date(t.createdAt).toLocaleDateString()
+          createdAt: new Date(Number(t.createdAt) || t.createdAt).toLocaleDateString()
         })))
       }
     } catch (error) {
@@ -150,26 +162,42 @@ export default function TemplatesPage() {
 
   useEffect(() => {
     fetchTemplates()
-  }, [token])
+  }, [])
 
   const handleCreate = async () => {
     try {
-      const res = await fetch(`${API_URL}/templates`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
+      const res = await axios.post(`/graphql`, {
+        query: `
+          mutation CreateTemplate($input: CreateTemplateInput!) {
+            createTemplate(input: $input) {
+              id
+            }
+          }
+        `,
+        variables: {
+          input: {
+            name: formData.name,
+            subject: formData.subject,
+            html: formData.body
+          }
+        }
+      })
+      const json = res.data
+      if (!json.errors) {
+        const newTemplate = {
+          id: json.data.createTemplate.id,
           name: formData.name,
           subject: formData.subject,
-          html: formData.body
-        })
-      })
-      if (res.ok) {
-        fetchTemplates()
+          body: formData.body,
+          usageCount: 0,
+          lastUsed: "Never",
+          createdAt: new Date().toLocaleDateString()
+        }
+        setTemplates(prev => [newTemplate, ...prev])
         setFormData({ name: "", subject: "", body: "" })
         setIsCreateOpen(false)
+      } else {
+        console.error(json.errors)
       }
     } catch (error) {
       console.error("Failed to create template:", error)
@@ -179,22 +207,35 @@ export default function TemplatesPage() {
   const handleEdit = async () => {
     if (selectedTemplate) {
       try {
-        const res = await fetch(`${API_URL}/templates/${selectedTemplate.id}`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
+        const res = await axios.post(`/graphql`, {
+          query: `
+            mutation UpdateTemplate($id: ID!, $input: UpdateTemplateInput!) {
+              updateTemplate(id: $id, input: $input) {
+                id
+              }
+            }
+          `,
+          variables: {
+            id: selectedTemplate.id,
+            input: {
+              name: formData.name,
+              subject: formData.subject,
+              html: formData.body
+            }
+          }
+        })
+        const json = res.data
+        if (!json.errors) {
+          setTemplates(prev => prev.map(t => t.id === selectedTemplate.id ? {
+            ...t,
             name: formData.name,
             subject: formData.subject,
-            html: formData.body
-          })
-        })
-        if (res.ok) {
-          fetchTemplates()
+            body: formData.body
+          } : t))
           setIsEditOpen(false)
           setSelectedTemplate(null)
+        } else {
+          console.error(json.errors)
         }
       } catch (error) {
         console.error("Failed to update template:", error)
@@ -205,14 +246,23 @@ export default function TemplatesPage() {
   const handleDelete = async () => {
     if (selectedTemplate) {
       try {
-        const res = await fetch(`${API_URL}/templates/${selectedTemplate.id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+        const res = await axios.post(`/graphql`, {
+          query: `
+            mutation DeleteTemplate($id: ID!) {
+              deleteTemplate(id: $id) {
+                id
+              }
+            }
+          `,
+          variables: { id: selectedTemplate.id }
         })
-        if (res.ok) {
-          fetchTemplates()
+        const json = res.data
+        if (!json.errors) {
+          setTemplates(prev => prev.filter(t => t.id !== selectedTemplate.id))
           setIsDeleteOpen(false)
           setSelectedTemplate(null)
+        } else {
+          console.error(json.errors)
         }
       } catch (error) {
         console.error("Failed to delete template:", error)

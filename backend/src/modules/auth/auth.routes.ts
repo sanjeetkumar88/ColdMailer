@@ -1,15 +1,16 @@
 import { Router } from 'express';
-import * as authController from './auth.controller';
+import { register, login, refreshToken, googleSync, getProfile, logout } from './auth.controller';
 import { validate } from '../../shared/middleware/validate.middleware';
-import { registerSchema, loginSchema } from './auth.schema';
 import { protect } from '../../shared/middleware/auth.middleware';
+import { registerSchema, loginSchema, googleSyncSchema } from './auth.schema';
 
 const router = Router();
 
-router.post('/register', validate(registerSchema), authController.register);
-router.post('/login', validate(loginSchema), authController.login);
-router.post('/refresh', authController.refreshToken);
-router.post('/google-sync', authController.googleSync);
-router.get('/profile', protect, authController.getProfile);
+router.post('/register', validate(registerSchema), register);
+router.post('/login', validate(loginSchema), login);
+router.post('/refresh', refreshToken);
+router.post('/google-sync', validate(googleSyncSchema), googleSync);
+router.post('/logout', logout);
+router.get('/profile', protect, getProfile);
 
 export default router;

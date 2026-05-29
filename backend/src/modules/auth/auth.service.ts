@@ -8,7 +8,7 @@ import { AppError } from '../../shared/errors/AppError';
 export class AuthService {
   static async generateTokens(userId: string) {
     const accessToken = jwt.sign({ id: userId }, env.JWT_SECRET, {
-      expiresIn: '15m', // Short-lived
+      expiresIn: '7d', // Increased from 15m to 7d to prevent frequent timeouts
     });
 
     const refreshTokenString = crypto.randomBytes(40).toString('hex');
@@ -34,7 +34,7 @@ export class AuthService {
     if (!refreshToken) throw new AppError('Invalid or expired refresh token', 401);
 
     const accessToken = jwt.sign({ id: refreshToken.userId }, env.JWT_SECRET, {
-      expiresIn: '15m',
+      expiresIn: '7d',
     });
 
     return { accessToken };

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
+import axios from "axios"
 import { 
   Search, 
   Filter, 
@@ -42,7 +43,7 @@ import { toast } from "sonner"
 import Link from "next/link"
 
 export default function CampaignsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -51,17 +52,43 @@ export default function CampaignsPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-  const token = (session?.user as any)?.accessToken
-
   const fetchCampaigns = useCallback(async () => {
-    if (!token) return
+    if (status === 'unauthenticated') {
+      setLoading(false)
+      return
+    }
+    if (status === 'loading') return
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/campaigns?page=${page}&status=${statusFilter}&limit=10`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await axios.post(`/api/graphql-proxy`, {
+        query: `
+          query {
+            paginatedCampaigns(page: ${page}, limit: 10, status: "${statusFilter}") {
+              campaigns {
+                id
+                name
+                subject
+                recipients
+                status
+                sentCount
+                failedCount
+                openedCount
+                sender {
+                  email
+                }
+                template {
+                  name
+                }
+                createdAt
+                updatedAt
+              }
+              totalPages
+            }
+          }
+        `
       })
-      const data = await res.json()
-      if (data.success) {
+      const data = res.data?.data?.paginatedCampaigns
+      if (data) {
         setCampaigns(data.campaigns)
         setTotalPages(data.totalPages)
       }
@@ -70,7 +97,7 @@ export default function CampaignsPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, API_URL, page, statusFilter])
+  }, [API_URL, page, statusFilter, status])
 
   useEffect(() => {
     fetchCampaigns()
@@ -85,12 +112,12 @@ export default function CampaignsPage() {
       
       try {
         const endpoint = campaign.failedCount > 0 
-          ? `${API_URL}/campaigns/${campaign._id}/retry` 
-          : `${API_URL}/campaigns/${campaign._id}/launch`;
+          ? `/api/proxy/campaigns/${campaign.id}/retry` 
+          : `/api/proxy/campaigns/${campaign.id}/launch`;
 
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         })
         const data = await res.json()
         if (data.success) {
@@ -103,15 +130,15 @@ export default function CampaignsPage() {
         toast.error("Network error")
       }
     } else if (action === 'followup') {
-      window.location.href = `/dashboard/send?followup=${campaign._id}`
+      window.location.href = `/dashboard/send?followup=${campaign.id}`
     } else if (action === 'duplicate') {
-      window.location.href = `/dashboard/send?duplicate=${campaign._id}`
+      window.location.href = `/dashboard/send?duplicate=${campaign.id}`
     } else if (action === 'delete') {
       if (!confirm("Are you sure you want to delete this campaign?")) return;
       try {
-        const res = await fetch(`${API_URL}/campaigns/${campaign._id}`, {
+        const res = await fetch(`/api/proxy/campaigns/${campaign.id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         })
         const data = await res.json()
         if (data.success) {
@@ -220,7 +247,7 @@ export default function CampaignsPage() {
                     const displayStatus = !campaign.sender && (campaign.status === 'processing' || campaign.status === 'scheduled') ? 'failed' : campaign.status;
 
                     return (
-                    <tr key={campaign._id} className="hover:bg-muted/30 transition-colors">
+                    <tr key={campaign.id} className="hover:bg-muted/30 transition-colors">
                       <td className="p-4">
                         <div className="font-medium">{campaign.name || campaign.subject}</div>
                         <div className="text-xs flex items-center gap-1 mt-0.5">
@@ -293,7 +320,7 @@ export default function CampaignsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/campaigns/${campaign._id}`}>
+                              <Link href={`/dashboard/campaigns/${campaign.id}`}>
                                 <ExternalLink className="w-4 h-4 mr-2" />
                                 View Details
                               </Link>

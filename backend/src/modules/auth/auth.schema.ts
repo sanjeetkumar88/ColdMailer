@@ -14,3 +14,10 @@ export const loginSchema = z.object({
     password: z.string().min(1, 'Password is required'),
   }),
 });
+
+export const googleSyncSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    name: z.string().min(1, 'Name is required'),
+  }),
+});

@@ -99,7 +99,7 @@ export default function ContactsPage() {
     if (!token) return
     try {
       const res = await fetch(`${API_URL}/contacts`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        
       })
       const data = await res.json()
       if (data.success) {
@@ -129,7 +129,7 @@ export default function ContactsPage() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          
         },
         body: JSON.stringify(formData)
       })
@@ -150,7 +150,7 @@ export default function ContactsPage() {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            
           },
           body: JSON.stringify(formData)
         })
@@ -170,7 +170,7 @@ export default function ContactsPage() {
       try {
         const res = await fetch(`${API_URL}/contacts/${selectedContact.id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         })
         if (res.ok) {
           fetchContacts()

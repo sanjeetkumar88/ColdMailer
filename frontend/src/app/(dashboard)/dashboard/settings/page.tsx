@@ -63,6 +63,17 @@ export default function SettingsPage() {
   })
   const [isReconfigureOpen, setIsReconfigureOpen] = useState(false)
   const [isReconfiguring, setIsReconfiguring] = useState(false)
+  
+  // SMTP State
+  const [authMethod, setAuthMethod] = useState<"oauth" | "app-password" | "smtp">("oauth")
+  const [smtpForm, setSmtpForm] = useState({
+    name: "",
+    email: "",
+    host: "",
+    port: "587",
+    user: "",
+    pass: ""
+  })
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
   const token = (session?.user as any)?.accessToken
@@ -72,10 +83,10 @@ export default function SettingsPage() {
     try {
       const [profileRes, sendersRes] = await Promise.all([
         fetch(`${API_URL}/auth/profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         }),
         fetch(`${API_URL}/senders`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         })
       ])
       const profileData = await profileRes.json()
@@ -95,13 +106,33 @@ export default function SettingsPage() {
   }, [token])
 
   const connectedSender = senders.length > 0 ? senders[0] : null
-  const authMethod = connectedSender?.authMethod || "oauth"
+  const activeAuthMethod = connectedSender?.provider === 'smtp' ? "smtp" : (connectedSender?.authMethod || "oauth")
 
-  const handleReconfigure = () => {
+  const handleReconfigure = async () => {
     setIsReconfiguring(true)
     if (authMethod === "oauth") {
       // Redirect to backend OAuth flow with token
       window.location.href = `${API_URL}/senders/google/auth?token=${token}`
+    } else if (authMethod === "smtp") {
+      try {
+        const res = await fetch(`/api/proxy/senders/smtp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(smtpForm)
+        })
+        const data = await res.json()
+        if (data.success) {
+          toast.success("SMTP Account connected successfully")
+          setIsReconfigureOpen(false)
+          fetchData()
+        } else {
+          toast.error(data.message || "Failed to connect SMTP account")
+        }
+      } catch (error) {
+        toast.error("Network error occurred")
+      } finally {
+        setIsReconfiguring(false)
+      }
     } else {
       // Logic for App Password would go here
       setIsReconfiguring(false)
@@ -113,9 +144,9 @@ export default function SettingsPage() {
     if (!confirm("Are you sure you want to disconnect this account? You will not be able to send emails until you reconnect.")) return
 
     try {
-      const res = await fetch(`${API_URL}/senders/${id}`, {
+      const res = await fetch(`/api/proxy/senders/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        
       })
       const data = await res.json()
       if (data.success) {
@@ -160,7 +191,7 @@ export default function SettingsPage() {
               <div>
                 <div className="font-medium">{connectedSender?.email || "No account connected"}</div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{connectedSender ? `Connected via ${authMethod === "oauth" ? "Google OAuth" : "App Password"}` : "Connect an account to start sending"}</span>
+                  <span>{connectedSender ? `Connected via ${activeAuthMethod === "oauth" ? "Google OAuth" : activeAuthMethod === "smtp" ? "Custom SMTP" : "App Password"}` : "Connect an account to start sending"}</span>
                   {connectedSender && (
                     <Badge variant="secondary" className="text-xs">
                       <Check className="w-3 h-3 mr-1" />
@@ -191,9 +222,9 @@ export default function SettingsPage() {
           {/* Auth Method Info */}
           <div className="space-y-3">
             <Label>Authentication Method</Label>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div className={`p-4 rounded-xl border-2 transition-colors ${
-                authMethod === "oauth" ? "border-primary bg-primary/5" : "border-border"
+                activeAuthMethod === "oauth" ? "border-primary bg-primary/5" : "border-border"
               }`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -220,13 +251,13 @@ export default function SettingsPage() {
                     <div className="font-medium text-sm">Google OAuth</div>
                     <div className="text-xs text-muted-foreground">Secure token-based</div>
                   </div>
-                  {authMethod === "oauth" && (
+                  {activeAuthMethod === "oauth" && (
                     <Check className="w-5 h-5 text-primary ml-auto" />
                   )}
                 </div>
               </div>
               <div className={`p-4 rounded-xl border-2 transition-colors ${
-                authMethod === "app-password" ? "border-primary bg-primary/5" : "border-border"
+                activeAuthMethod === "app-password" ? "border-primary bg-primary/5" : "border-border"
               }`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
@@ -236,7 +267,23 @@ export default function SettingsPage() {
                     <div className="font-medium text-sm">App Password</div>
                     <div className="text-xs text-muted-foreground">Gmail app-specific</div>
                   </div>
-                  {authMethod === "app-password" && (
+                  {activeAuthMethod === "app-password" && (
+                    <Check className="w-5 h-5 text-primary ml-auto" />
+                  )}
+                </div>
+              </div>
+              <div className={`p-4 rounded-xl border-2 transition-colors ${
+                activeAuthMethod === "smtp" ? "border-primary bg-primary/5" : "border-border"
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                    <Laptop className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm">Custom SMTP</div>
+                    <div className="text-xs text-muted-foreground">Any email provider</div>
+                  </div>
+                  {activeAuthMethod === "smtp" && (
                     <Check className="w-5 h-5 text-primary ml-auto" />
                   )}
                 </div>
@@ -502,8 +549,76 @@ export default function SettingsPage() {
                       Gmail App Password
                     </Label>
                   </div>
+                  <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
+                    authMethod === "smtp" ? "border-primary bg-primary/5" : "border-border"
+                  }`}>
+                    <RadioGroupItem value="smtp" id="reconfig-smtp" />
+                    <Label htmlFor="reconfig-smtp" className="cursor-pointer flex-1">
+                      Custom SMTP Credentials
+                    </Label>
+                  </div>
                 </div>
               </RadioGroup>
+
+              {authMethod === "smtp" && (
+                <div className="mt-4 space-y-3 p-4 border rounded-lg bg-muted/20">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Sender Name</Label>
+                      <Input 
+                        placeholder="John Doe" 
+                        value={smtpForm.name} 
+                        onChange={(e) => setSmtpForm({...smtpForm, name: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Email Address</Label>
+                      <Input 
+                        placeholder="john@example.com" 
+                        value={smtpForm.email} 
+                        onChange={(e) => setSmtpForm({...smtpForm, email: e.target.value})} 
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1 col-span-2">
+                      <Label>SMTP Host</Label>
+                      <Input 
+                        placeholder="smtp.example.com" 
+                        value={smtpForm.host} 
+                        onChange={(e) => setSmtpForm({...smtpForm, host: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Port</Label>
+                      <Input 
+                        placeholder="465 or 587" 
+                        value={smtpForm.port} 
+                        onChange={(e) => setSmtpForm({...smtpForm, port: e.target.value})} 
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>SMTP Username</Label>
+                      <Input 
+                        placeholder="john@example.com" 
+                        value={smtpForm.user} 
+                        onChange={(e) => setSmtpForm({...smtpForm, user: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>SMTP Password</Label>
+                      <Input 
+                        type="password"
+                        placeholder="••••••••" 
+                        value={smtpForm.pass} 
+                        onChange={(e) => setSmtpForm({...smtpForm, pass: e.target.value})} 
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

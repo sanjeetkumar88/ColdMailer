@@ -8,7 +8,9 @@ import { asyncHandler } from '../utils/asyncHandler';
 export const protect = asyncHandler(async (req: any, res: Response, next: NextFunction) => {
   let token;
 
-  if (req.headers.authorization?.startsWith('Bearer')) {
+  if (req.cookies && (req.cookies.token || req.cookies.accessToken)) {
+    token = req.cookies.token || req.cookies.accessToken;
+  } else if (req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   } else if (req.query.token) {
     token = req.query.token as string;

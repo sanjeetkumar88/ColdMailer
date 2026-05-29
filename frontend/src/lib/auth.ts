@@ -9,6 +9,8 @@ import User from "./models/User";
 import { comparePasswords } from "./auth-utils";
 import clientPromise from "./mongodb-client"; // We need this for the adapter
 
+const BACKEND_URL = process.env.BACKEND_API_URL || "http://127.0.0.1:5000/api";
+
 export const authOptions: NextAuthOptions = {
   adapter: MongoDBAdapter(clientPromise as any) as any,
   providers: [
@@ -31,7 +33,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+          const res = await fetch(`${BACKEND_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -42,14 +44,28 @@ export const authOptions: NextAuthOptions = {
 
           const data = await res.json();
 
-          if (data.success && data.data.token) {
+          if (data.success && data.data.user) {
+            // Get tokens from backend response
+            const setCookieHeaders = res.headers.getSetCookie();
+            let accessToken = "";
+            let refreshToken = "";
+            
+            if (setCookieHeaders && setCookieHeaders.length > 0) {
+              setCookieHeaders.forEach((header) => {
+                const [nameValue] = header.split(';');
+                const [name, value] = nameValue.split('=');
+                if (name === 'accessToken') accessToken = value;
+                if (name === 'refreshToken') refreshToken = value;
+              });
+            }
+
             return {
               id: data.data.user._id,
               name: data.data.user.name,
               email: data.data.user.email,
               role: data.data.user.role,
-              accessToken: data.data.accessToken, // Store the backend token
-              refreshToken: data.data.refreshToken,
+              accessToken,
+              refreshToken,
             };
           }
           return null;
@@ -67,21 +83,22 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
-        token.accessToken = (user as any).accessToken;
-        token.refreshToken = (user as any).refreshToken;
-        
-        const decoded: any = jwt.decode((user as any).accessToken);
-        if (decoded) token.accessTokenExpires = decoded.exp * 1000;
+        // For credentials login, the accessToken comes from the user object
+        if ((user as any).accessToken) {
+          token.accessToken = (user as any).accessToken;
+          token.refreshToken = (user as any).refreshToken;
+          token.syncedWithBackend = true;
+        }
       }
       
-      // If accessToken is missing (e.g., OAuth login), sync with backend to get our custom tokens
-      if (!token.accessToken && token.email) {
+      // If logging in via OAuth (Google/Azure), we must call backend to sync
+      if (!token.syncedWithBackend && token.email) {
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google-sync`, {
+          const res = await fetch(`${BACKEND_URL}/auth/google-sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -89,40 +106,36 @@ export const authOptions: NextAuthOptions = {
               name: token.name,
             }),
           });
+
           const data = await res.json();
           if (data.success) {
             token.id = data.data.user._id;
-            token.accessToken = data.data.accessToken;
-            token.refreshToken = data.data.refreshToken;
+            token.syncedWithBackend = true;
             
-            // Decode token to get expiration
-            const decoded: any = jwt.decode(data.data.accessToken);
-            token.accessTokenExpires = decoded.exp * 1000;
+            // Try to get token from response body first (most reliable)
+            if (data.data.accessToken) {
+              token.accessToken = data.data.accessToken;
+              token.refreshToken = data.data.refreshToken;
+            } else {
+              // Fallback: parse tokens from Set-Cookie headers
+              const setCookieHeader = res.headers.get('set-cookie');
+              if (setCookieHeader) {
+                const cookies = setCookieHeader.split(',').map(c => c.trim());
+                for (const cookie of cookies) {
+                  const [nameValue] = cookie.split(';');
+                  const eqIndex = nameValue.indexOf('=');
+                  if (eqIndex > -1) {
+                    const name = nameValue.substring(0, eqIndex).trim();
+                    const value = nameValue.substring(eqIndex + 1).trim();
+                    if (name === 'accessToken') token.accessToken = value;
+                    if (name === 'refreshToken') token.refreshToken = value;
+                  }
+                }
+              }
+            }
           }
         } catch (error) {
           console.error("Backend sync error:", error);
-        }
-      }
-
-      // Check if token is expired
-      const now = Date.now();
-      if (token.accessTokenExpires && now > (token.accessTokenExpires as number) - 60 * 1000) {
-        // Token is expired or about to expire (1 min buffer), refresh it
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: token.refreshToken }),
-          });
-          const data = await res.json();
-          if (data.success) {
-            token.accessToken = data.data.accessToken;
-            const decoded: any = jwt.decode(data.data.accessToken);
-            token.accessTokenExpires = decoded.exp * 1000;
-          }
-        } catch (error) {
-          console.error("Error refreshing access token:", error);
-          return { ...token, error: "RefreshAccessTokenError" };
         }
       }
 
@@ -132,8 +145,6 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
-        (session.user as any).accessToken = token.accessToken;
-        (session as any).error = token.error;
       }
       return session;
     },

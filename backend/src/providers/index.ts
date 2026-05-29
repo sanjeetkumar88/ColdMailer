@@ -1,6 +1,7 @@
 import { IEmailProvider } from './provider.interface';
 import { ISender } from '../modules/senders/sender.model';
 import { GmailProvider } from './gmail.provider';
+import { SmtpProvider } from './smtp.provider';
 
 class MockProvider implements IEmailProvider {
   async sendEmail(options: any): Promise<void> {
@@ -12,6 +13,9 @@ class MockProvider implements IEmailProvider {
 export const getProvider = (sender: ISender): IEmailProvider => {
   if (sender.provider === 'gmail') {
     return new GmailProvider(sender);
+  }
+  if (sender.provider === 'smtp') {
+    return new SmtpProvider(sender);
   }
   return new MockProvider();
 };

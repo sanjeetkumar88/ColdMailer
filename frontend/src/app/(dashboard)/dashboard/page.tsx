@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import axios from "axios"
 
 const initialStats = [
   { name: "Total Emails Sent", value: "0", change: "0%", trend: "up", icon: Mail, description: "Lifetime" },
@@ -55,26 +56,47 @@ export default function DashboardPage() {
   const token = (session?.user as any)?.accessToken
 
   const fetchDashboardData = useCallback(async () => {
-    if (!token) {
-      if (status !== 'loading') setIsLoading(false)
+    if (status === 'unauthenticated') {
+      setIsLoading(false)
       return
     }
 
     try {
-      const [statsRes, activityRes] = await Promise.all([
-        fetch(`${API_URL}/analytics/stats`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${API_URL}/campaigns`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-      ])
+      const res = await axios.post(`/api/graphql-proxy`, {
+        query: `
+          query {
+            dashboardStats {
+              totalSent
+              totalOpened
+              successRate
+            }
+            recentCampaigns(limit: 10) {
+              id
+              subject
+              recipients
+              status
+              sentCount
+              failedCount
+              template { name }
+              sender { email }
+              updatedAt
+            }
+            mediaFiles {
+              id
+              originalName
+              size
+              url
+              createdAt
+            }
+          }
+        `
+      });
 
-      const statsData = await statsRes.json()
-      const activityData = await activityRes.json()
-
-      if (statsData.success) {
-        const s = statsData.data
+      const json = res.data;
+      if (json.errors) {
+        console.error("GraphQL errors:", json.errors);
+      } else if (json.data) {
+        const { dashboardStats: s, recentCampaigns: campaigns, mediaFiles } = json.data;
         setDashboardStats([
           { 
             name: "Total Emails Sent", 
@@ -102,21 +124,18 @@ export default function DashboardPage() {
           },
           { 
             name: "Active Campaigns", 
-            value: (activityData.campaigns || activityData.data)?.filter((c: any) => c.status === 'processing').length.toString() || "0", 
+            value: (campaigns || []).filter((c: any) => c.status === 'processing').length.toString(), 
             change: "+0%", 
             trend: "up",
             icon: Send,
             description: "Running now"
           },
         ])
-      }
 
-      if (activityData.success && (activityData.campaigns || activityData.data)) {
-        const campaigns = activityData.campaigns || activityData.data;
-        const mappedActivity = campaigns.slice(0, 10).map((c: any) => ({
-          id: c._id,
+        const mappedActivity = (campaigns || []).map((c: any) => ({
+          id: c.id,
           recipient: c.recipients?.length === 1 ? c.recipients[0] : `${c.recipients?.length || 0} recipients`,
-          subject: c.subject,
+          subject: c.subject || "No Subject",
           template: c.template?.name || "Custom",
           status: c.status,
           hasSender: !!c.sender,
@@ -126,41 +145,31 @@ export default function DashboardPage() {
             failed: c.failedCount || 0,
             total: c.recipients?.length || 0
           },
-          time: new Date(c.updatedAt).toLocaleDateString()
+          time: new Date(Number(c.updatedAt) || c.updatedAt).toLocaleDateString()
         }))
         setRecentActivityData(mappedActivity)
+        
+        setResumes(mediaFiles || [])
+        setIsResumesLoading(false)
       }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error)
     } finally {
       setIsLoading(false)
     }
-  }, [token, API_URL, status])
+  }, [status])
 
   const fetchResumes = useCallback(async () => {
-    if (!token) return
-    setIsResumesLoading(true)
-    try {
-      const res = await fetch(`${API_URL}/media`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await res.json()
-      if (data.success) {
-        setResumes(data.data)
-      }
-    } catch (error) {
-      console.error("Failed to fetch resumes:", error)
-    } finally {
-      setIsResumesLoading(false)
-    }
-  }, [token, API_URL])
+    // Media files are now fetched in fetchDashboardData
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const handleDeleteResume = async (id: string) => {
     if (!confirm("Are you sure you want to delete this resume?")) return
     try {
       const res = await fetch(`${API_URL}/media/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        
       })
       const data = await res.json()
       if (data.success) {
@@ -175,19 +184,18 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    if (token) {
+    if (status === 'authenticated') {
       setIsLoading(true)
       fetchDashboardData()
-      fetchResumes()
       
       const interval = setInterval(() => {
         fetchDashboardData()
       }, 30000)
       return () => clearInterval(interval)
-    } else if (status !== 'loading') {
+    } else if (status === 'unauthenticated') {
       setIsLoading(false)
     }
-  }, [token, status, fetchDashboardData, fetchResumes])
+  }, [status, fetchDashboardData])
 
   const handleAction = async (action: string, activity: any) => {
     if (action === 'resend') {
@@ -203,7 +211,7 @@ export default function DashboardPage() {
           
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         })
         const data = await res.json()
         if (data.success) {
@@ -224,7 +232,7 @@ export default function DashboardPage() {
       try {
         const res = await fetch(`${API_URL}/campaigns/${activity.id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          
         })
         const data = await res.json()
         if (data.success) {

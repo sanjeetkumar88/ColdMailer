@@ -35,24 +35,31 @@ export const campaignWorker = new Worker(
     await Campaign.findByIdAndUpdate(campaignId, { status: 'processing' });
 
     const totalChunks = Math.ceil(recipients.length / CHUNK_SIZE);
+    let cumulativeDelay = 0;
 
     for (let i = 0; i < totalChunks; i++) {
       const chunk = recipients.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
 
-      const jobs = chunk.map((email) => ({
-        name: 'send-email',
-        data: {
-          campaignId,
-          recipientEmail: email,
-          senderId: campaign.sender._id,
-          templateId: campaign.template._id,
-          variables: campaign.variables ?? {},
-          attachments: campaign.attachments ?? [],
-        },
-        opts: {
-          delay: i * 1000, // Stagger sends
-        },
-      }));
+      const jobs = chunk.map((email) => {
+        // Random gap between 30 seconds and 90 seconds to simulate human sending
+        const randomGap = Math.floor(Math.random() * (90000 - 30000 + 1)) + 30000;
+        cumulativeDelay += randomGap;
+
+        return {
+          name: 'send-email',
+          data: {
+            campaignId,
+            recipientEmail: email,
+            senderId: campaign.sender._id,
+            templateId: campaign.template._id,
+            variables: campaign.variables ?? {},
+            attachments: campaign.attachments ?? [],
+          },
+          opts: {
+            delay: cumulativeDelay, // Human-like staggered sending
+          },
+        };
+      });
 
       await emailQueue.addBulk(jobs);
     }

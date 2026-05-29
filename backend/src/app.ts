@@ -1,11 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { errorMiddleware } from './shared/middleware/error.middleware';
 import authRoutes from './modules/auth/auth.routes';
 import senderRoutes from './modules/senders/sender.routes';
 import campaignRoutes from './modules/campaigns/campaign.routes';
-import templateRoutes from './modules/templates/template.routes';
 import contactRoutes from './modules/contacts/contact.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import mediaRoutes from './modules/media/media.routes';
@@ -16,8 +16,12 @@ import { apiRateLimiter, authRateLimiter } from './shared/middleware/rate-limite
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 app.use(morgan('dev'));
 
 // Apply general rate limiting to all routes
@@ -27,7 +31,6 @@ app.use('/api', apiRateLimiter);
 app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/senders', senderRoutes);
 app.use('/api/campaigns', campaignRoutes);
-app.use('/api/templates', templateRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/media', mediaRoutes);
@@ -38,7 +41,10 @@ app.get('/health', (req: express.Request, res: express.Response) => {
 });
 
 // 404 Handler
-app.use((req, res) => {
+app.use((req, res, next) => {
+  if (req.path === '/graphql' || req.path.startsWith('/graphql')) {
+    return next();
+  }
   res.status(404).json({
     success: false,
     message: `Cannot ${req.method} ${req.path}`,

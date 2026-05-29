@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useParams, useRouter } from "next/navigation"
+import axios from "axios"
 import { 
   ChevronLeft, 
   Mail, 
@@ -33,7 +34,7 @@ export default function CampaignDetailPage() {
   const params = useParams()
   const id = params?.id
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [campaign, setCampaign] = useState<any>(null)
   const [stats, setStats] = useState<any>(null)
   const [events, setEvents] = useState<any[]>([])
@@ -41,36 +42,64 @@ export default function CampaignDetailPage() {
   const [isRetrying, setIsRetrying] = useState<string | null>(null)
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-  const token = (session?.user as any)?.accessToken
 
   const fetchData = useCallback(async () => {
-    if (!token || !id) return
+    if (status === 'unauthenticated' || !id) {
+      setLoading(false)
+      return
+    }
+    if (status === 'loading') return
+
     try {
-      const [campaignRes, statsRes, eventsRes] = await Promise.all([
-        fetch(`${API_URL}/campaigns/${id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${API_URL}/analytics/stats?campaignId=${id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${API_URL}/analytics/${id}/events`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-      ])
+      const res = await axios.post(`/api/graphql-proxy`, {
+        query: `
+          query {
+            campaign(id: "${id}") {
+              id
+              name
+              subject
+              recipients
+              status
+              sentCount
+              failedCount
+              openedCount
+              createdAt
+              updatedAt
+              sender {
+                email
+              }
+              template {
+                name
+              }
+            }
+            campaignStats(campaignId: "${id}") {
+              totalSent
+              totalOpened
+              totalFailed
+            }
+            campaignEvents(campaignId: "${id}") {
+              id
+              recipientEmail
+              type
+              error
+              createdAt
+            }
+          }
+        `
+      })
 
-      const campaignData = await campaignRes.json()
-      const statsData = await statsRes.json()
-      const eventsData = await eventsRes.json()
-
-      if (campaignData.success) setCampaign(campaignData.data)
-      if (statsData.success) setStats(statsData.data)
-      if (eventsData.success) setEvents(eventsData.data)
+      const data = res.data?.data
+      if (data?.campaign) {
+        setCampaign(data.campaign)
+        setStats(data.campaignStats)
+        setEvents(data.campaignEvents)
+      }
     } catch (error) {
       toast.error("Failed to load campaign details")
     } finally {
       setLoading(false)
     }
-  }, [token, API_URL, id])
+  }, [id, status])
 
   useEffect(() => {
     fetchData()
@@ -81,13 +110,12 @@ export default function CampaignDetailPage() {
   }, [fetchData, campaign?.status])
 
   const handleResendSingle = async (email: string) => {
-    if (!token || !id) return
+    if (!id) return
     setIsRetrying(email)
     try {
-      const res = await fetch(`${API_URL}/campaigns/${id}/retry`, {
+      const res = await fetch(`/api/proxy/campaigns/${id}/retry`, {
         method: 'POST',
         headers: { 
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ emails: [email] })
@@ -109,9 +137,9 @@ export default function CampaignDetailPage() {
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this campaign?")) return
     try {
-      const res = await fetch(`${API_URL}/campaigns/${id}`, {
+      const res = await fetch(`/api/proxy/campaigns/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        
       })
       if (res.ok) {
         toast.success("Campaign deleted")
@@ -275,7 +303,7 @@ export default function CampaignDetailPage() {
                   </div>
                 ) : (
                   events.map((event) => (
-                    <div key={event._id} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors group">
+                    <div key={event.id} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors group">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                         event.type === 'sent' ? 'bg-primary/10 text-primary' : 
                         event.type === 'opened' ? 'bg-blue-500/10 text-blue-500' :
