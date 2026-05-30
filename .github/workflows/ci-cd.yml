@@ -1,0 +1,89 @@
+name: MailFlow CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # -------------------------------------------------------------
+  # 1. CONTINUOUS INTEGRATION (Tests & Build)
+  # -------------------------------------------------------------
+  ci-backend:
+    name: Build & Test Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      # TODO: Add your backend test script here in the future
+      # - name: Run Backend Tests
+      #   working-directory: ./backend
+      #   run: npm run test
+
+      - name: Build TypeScript
+        working-directory: ./backend
+        run: npm run build
+
+  ci-frontend:
+    name: Build & Test Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      # TODO: Add your frontend test script here in the future
+      # - name: Run Frontend Tests
+      #   working-directory: ./frontend
+      #   run: npm run test
+
+      - name: Build Next.js App
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          # Dummy env vars just so the Next.js build passes if it requires them
+          NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+
+  # -------------------------------------------------------------
+  # 2. CONTINUOUS DEPLOYMENT
+  # -------------------------------------------------------------
+  deploy:
+    name: Deploy to Production
+    needs: [ci-backend, ci-frontend] # Wait for CI to pass before deploying!
+    if: github.ref == 'refs/heads/main' # Only deploy when pushing to main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deployment (Backend)
+        run: |
+          # Sends a secure POST request to your Render Deploy Hook
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+      - name: Trigger Vercel Deployment (Frontend)
+        run: |
+          # Sends a secure POST request to your Vercel Deploy Hook
+          curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
