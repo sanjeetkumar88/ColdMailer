@@ -166,7 +166,7 @@ export default function TemplatesPage() {
 
   const handleCreate = async () => {
     try {
-      const res = await axios.post(`/graphql`, {
+      const res = await axios.post(`/api/graphql-proxy`, {
         query: `
           mutation CreateTemplate($input: CreateTemplateInput!) {
             createTemplate(input: $input) {
@@ -207,7 +207,7 @@ export default function TemplatesPage() {
   const handleEdit = async () => {
     if (selectedTemplate) {
       try {
-        const res = await axios.post(`/graphql`, {
+        const res = await axios.post(`/api/graphql-proxy`, {
           query: `
             mutation UpdateTemplate($id: ID!, $input: UpdateTemplateInput!) {
               updateTemplate(id: $id, input: $input) {
@@ -246,7 +246,7 @@ export default function TemplatesPage() {
   const handleDelete = async () => {
     if (selectedTemplate) {
       try {
-        const res = await axios.post(`/graphql`, {
+        const res = await axios.post(`/api/graphql-proxy`, {
           query: `
             mutation DeleteTemplate($id: ID!) {
               deleteTemplate(id: $id) {

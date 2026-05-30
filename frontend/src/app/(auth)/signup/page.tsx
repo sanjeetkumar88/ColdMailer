@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import axios from "axios"
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -34,21 +35,12 @@ export default function SignupPage() {
     const password = formData.get("password") as string
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      })
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, { name, email, password })
+      const data = res.data
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        toast.error(data.message || "Registration failed")
-        setIsLoading(false)
-      } else {
-        toast.success("Account created! Signing you in...")
-        
-        // Auto sign-in
+      toast.success("Account created! Signing you in...")
+      
+      // Auto sign-in
         const loginRes = await signIn("credentials", {
           email,
           password,
@@ -61,9 +53,8 @@ export default function SignupPage() {
         } else {
           router.push("/dashboard")
         }
-      }
-    } catch (err) {
-      toast.error("Something went wrong")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Registration failed")
       setIsLoading(false)
     }
   }

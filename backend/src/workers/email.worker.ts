@@ -40,9 +40,7 @@ export const emailWorker = new Worker(
     const { subject, html, text } = renderTemplate(template, {
       ...variables,
       email: recipientEmail,
-      firstName: contact?.firstName || '',
-      lastName: contact?.lastName || '',
-      name: contact?.firstName ? `${contact.firstName} ${contact.lastName || ''}`.trim() : '',
+      name: contact?.name || '',
       ...(contact?.metadata || {}) // Spread any custom fields like company, role
     });
 

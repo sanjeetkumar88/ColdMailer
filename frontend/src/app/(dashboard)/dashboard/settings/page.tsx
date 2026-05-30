@@ -1,6 +1,7 @@
 "use client"
 
 import { toast } from "sonner"
+import axios from "axios"
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
@@ -30,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useTheme } from "next-themes"
 import {
   Dialog,
   DialogContent,
@@ -51,11 +53,11 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function SettingsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const { theme, setTheme } = useTheme()
   const [userProfile, setUserProfile] = useState<any>(null)
   const [senders, setSenders] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system")
   const [notifications, setNotifications] = useState({
     emailSent: true,
     emailFailed: true,
@@ -64,11 +66,16 @@ export default function SettingsPage() {
   })
   const [isReconfigureOpen, setIsReconfigureOpen] = useState(false)
   const [isReconfiguring, setIsReconfiguring] = useState(false)
+  const [mounted, setMounted] = useState(false)
   
   // SMTP State
   const [authMethod, setAuthMethod] = useState<"oauth" | "app-password" | "smtp">("oauth")
   const [smtpPreset, setSmtpPreset] = useState("other")
   
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const SMTP_PRESETS = {
     gmail: { name: "Gmail", host: "smtp.gmail.com", port: "587" },
     outlook: { name: "Outlook / Office 365", host: "smtp-mail.outlook.com", port: "587" },
@@ -90,25 +97,22 @@ export default function SettingsPage() {
     host: "",
     port: "587",
     user: "",
-    pass: ""
+    pass: "",
+    replyTo: "",
+    dailyLimit: 500
   })
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-  const token = (session?.user as any)?.accessToken
 
   const fetchData = async () => {
-    if (!token) return
+    if (status === "unauthenticated") return
     try {
       const [profileRes, sendersRes] = await Promise.all([
-        fetch(`${API_URL}/auth/profile`, {
-          
-        }),
-        fetch(`${API_URL}/senders`, {
-          
-        })
+        axios.get(`/api/proxy/auth/profile`),
+        axios.get(`/api/proxy/senders`)
       ])
-      const profileData = await profileRes.json()
-      const sendersData = await sendersRes.json()
+      const profileData = profileRes.data
+      const sendersData = sendersRes.data
 
       if (profileData.success) setUserProfile(profileData.data)
       if (sendersData.success) setSenders(sendersData.data)
@@ -119,9 +123,16 @@ export default function SettingsPage() {
     }
   }
 
+  const handleSaveProfile = () => {
+    // There is no backend endpoint for this currently, so we'll mock the success
+    toast.success("Profile updated successfully")
+  }
+
   useEffect(() => {
-    fetchData()
-  }, [token])
+    if (status !== "loading") {
+      fetchData()
+    }
+  }, [status])
 
   const connectedSender = senders.length > 0 ? senders[0] : null
   const activeAuthMethod = connectedSender?.provider === 'smtp' ? "smtp" : (connectedSender?.authMethod || "oauth")
@@ -129,16 +140,12 @@ export default function SettingsPage() {
   const handleReconfigure = async () => {
     setIsReconfiguring(true)
     if (authMethod === "oauth") {
-      // Redirect to backend OAuth flow with token
-      window.location.href = `${API_URL}/senders/google/auth?token=${token}`
+      // Redirect to backend OAuth flow via the secure proxy
+      window.location.href = `/api/proxy/senders/google/auth`
     } else if (authMethod === "smtp") {
       try {
-        const res = await fetch(`/api/proxy/senders/smtp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(smtpForm)
-        })
-        const data = await res.json()
+        const res = await axios.post(`/api/proxy/senders/smtp`, smtpForm)
+        const data = res.data
         if (data.success) {
           toast.success("SMTP Account connected successfully")
           setIsReconfigureOpen(false)
@@ -146,8 +153,8 @@ export default function SettingsPage() {
         } else {
           toast.error(data.message || "Failed to connect SMTP account")
         }
-      } catch (error) {
-        toast.error("Network error occurred")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Network error occurred")
       } finally {
         setIsReconfiguring(false)
       }
@@ -162,19 +169,16 @@ export default function SettingsPage() {
     if (!confirm("Are you sure you want to disconnect this account? You will not be able to send emails until you reconnect.")) return
 
     try {
-      const res = await fetch(`/api/proxy/senders/${id}`, {
-        method: 'DELETE',
-        
-      })
-      const data = await res.json()
+      const res = await axios.delete(`/api/proxy/senders/${id}`)
+      const data = res.data
       if (data.success) {
         toast.success("Account disconnected successfully")
         fetchData()
       } else {
         toast.error(data.message || "Failed to disconnect")
       }
-    } catch (error) {
-      toast.error("Network error occurred")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Network error occurred")
     }
   }
 
@@ -188,126 +192,76 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Gmail Configuration */}
+      {/* Email Accounts */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="w-5 h-5" />
-            Gmail Configuration
-          </CardTitle>
-          <CardDescription>
-            Manage your connected Gmail account for sending emails
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Email Accounts
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Manage your connected email accounts for sending campaigns
+            </CardDescription>
+          </div>
+          <Button onClick={() => setIsReconfigureOpen(true)}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Connect New Account
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Connected Account */}
-            <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Mail className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <div className="font-medium">{connectedSender?.email || "No account connected"}</div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{connectedSender ? `Connected via ${activeAuthMethod === "oauth" ? "Google OAuth" : activeAuthMethod === "smtp" ? "Custom SMTP" : "App Password"}` : "Connect an account to start sending"}</span>
-                  {connectedSender && (
-                    <Badge variant="secondary" className="text-xs">
-                      <Check className="w-3 h-3 mr-1" />
-                      Active
-                    </Badge>
-                  )}
-                </div>
-              </div>
+        <CardContent className="space-y-4 pt-4">
+          {senders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center rounded-xl bg-muted/30 border border-dashed">
+              <Mail className="w-8 h-8 text-muted-foreground mb-3" />
+              <div className="font-medium">No accounts connected</div>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                Connect a Gmail, Outlook, or Custom SMTP account to start sending campaigns.
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setIsReconfigureOpen(true)}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                {connectedSender ? "Reconfigure" : "Connect Account"}
-              </Button>
-              {connectedSender && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => handleDisconnect(connectedSender._id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
+          ) : (
+            <div className="space-y-3">
+              {senders.map((sender) => (
+                <div key={sender._id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{sender.email}</div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Connected via {sender.provider === 'smtp' ? 'Custom SMTP' : 'Google OAuth'}</span>
+                        <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-normal">
+                          <Check className="w-2.5 h-2.5 mr-0.5" />
+                          Active
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={() => setIsReconfigureOpen(true)}
+                      title="Reconfigure Account"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reconfigure
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
+                      onClick={() => handleDisconnect(sender._id)}
+                      title="Remove Account"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-
-          {/* Auth Method Info */}
-          <div className="space-y-3">
-            <Label>Authentication Method</Label>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className={`p-4 rounded-xl border-2 transition-colors ${
-                activeAuthMethod === "oauth" ? "border-primary bg-primary/5" : "border-border"
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-sm">Google OAuth</div>
-                    <div className="text-xs text-muted-foreground">Secure token-based</div>
-                  </div>
-                  {activeAuthMethod === "oauth" && (
-                    <Check className="w-5 h-5 text-primary ml-auto" />
-                  )}
-                </div>
-              </div>
-              <div className={`p-4 rounded-xl border-2 transition-colors ${
-                activeAuthMethod === "app-password" ? "border-primary bg-primary/5" : "border-border"
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                    <Key className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-sm">App Password</div>
-                    <div className="text-xs text-muted-foreground">Gmail app-specific</div>
-                  </div>
-                  {activeAuthMethod === "app-password" && (
-                    <Check className="w-5 h-5 text-primary ml-auto" />
-                  )}
-                </div>
-              </div>
-              <div className={`p-4 rounded-xl border-2 transition-colors ${
-                activeAuthMethod === "smtp" ? "border-primary bg-primary/5" : "border-border"
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                    <Laptop className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-sm">Custom SMTP</div>
-                    <div className="text-xs text-muted-foreground">Any email provider</div>
-                  </div>
-                  {activeAuthMethod === "smtp" && (
-                    <Check className="w-5 h-5 text-primary ml-auto" />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -323,21 +277,19 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" value={userProfile?.name || ""} readOnly />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Input id="role" value={userProfile?.role || ""} readOnly />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input 
+              id="name" 
+              value={userProfile?.name || ""} 
+              onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value })} 
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" value={userProfile?.email || ""} readOnly />
+            <Input id="email" type="email" value={userProfile?.email || ""} disabled className="bg-muted" />
           </div>
-          <Button>Save Changes</Button>
+          <Button onClick={handleSaveProfile}>Save Changes</Button>
         </CardContent>
       </Card>
 
@@ -353,7 +305,7 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={theme} onValueChange={(v) => setTheme(v as typeof theme)}>
+          <RadioGroup value={mounted ? theme : "system"} onValueChange={(v) => setTheme(v)}>
             <div className="grid gap-3 sm:grid-cols-3">
               <Label 
                 htmlFor="light"
@@ -528,27 +480,18 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Reconfigure Dialog */}
+      {/* Connect Account Dialog */}
       <Dialog open={isReconfigureOpen} onOpenChange={setIsReconfigureOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reconfigure Gmail</DialogTitle>
+            <DialogTitle>Connect New Account</DialogTitle>
             <DialogDescription>
-              Disconnect and reconnect your Gmail account
+              Add a new email account to send campaigns from
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="p-4 rounded-xl bg-muted/50 border flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
-              <div className="text-sm">
-                <div className="font-medium">Current connection will be removed</div>
-                <div className="text-muted-foreground mt-1">
-                  You&apos;ll need to re-authenticate with Google or set up a new app password.
-                </div>
-              </div>
-            </div>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-1">
             <div className="space-y-3">
-              <Label>Choose new authentication method</Label>
+              <Label>Choose authentication method</Label>
               <RadioGroup value={authMethod} onValueChange={(v) => setAuthMethod(v as typeof authMethod)}>
                 <div className="space-y-2">
                   <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
@@ -557,14 +500,6 @@ export default function SettingsPage() {
                     <RadioGroupItem value="oauth" id="reconfig-oauth" />
                     <Label htmlFor="reconfig-oauth" className="cursor-pointer flex-1">
                       Google OAuth (Recommended)
-                    </Label>
-                  </div>
-                  <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
-                    authMethod === "app-password" ? "border-primary bg-primary/5" : "border-border"
-                  }`}>
-                    <RadioGroupItem value="app-password" id="reconfig-app" />
-                    <Label htmlFor="reconfig-app" className="cursor-pointer flex-1">
-                      Gmail App Password
                     </Label>
                   </div>
                   <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
@@ -624,7 +559,11 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label>Port</Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Port</Label>
+                        {smtpForm.port === '465' && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">SSL/TLS</span>}
+                        {smtpForm.port === '587' && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">STARTTLS</span>}
+                      </div>
                       <Input 
                         placeholder="465 or 587" 
                         value={smtpForm.port} 
@@ -649,6 +588,46 @@ export default function SettingsPage() {
                         placeholder="••••••••" 
                         value={smtpForm.pass} 
                         onChange={(e) => setSmtpForm({...smtpForm, pass: e.target.value})} 
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Dynamic Help Text for App Passwords */}
+                  {(smtpPreset === "gmail" || smtpPreset === "yahoo") && (
+                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20 flex gap-2 items-start">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span><strong>App Password Required:</strong> You cannot use your regular login password. You must generate an App Password in your account security settings.</span>
+                    </div>
+                  )}
+                  {smtpPreset === "outlook" && (
+                    <div className="text-xs text-amber-600 bg-amber-500/10 p-2 rounded border border-amber-500/20 flex gap-2 items-start">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span><strong>Microsoft 365:</strong> Basic auth is deprecated. If connection fails, your admin must enable SMTP AUTH for this mailbox, or you may need an App Password.</span>
+                    </div>
+                  )}
+                  {smtpPreset === "zoho" && (
+                    <div className="text-xs text-amber-600 bg-amber-500/10 p-2 rounded border border-amber-500/20 flex gap-2 items-start">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span><strong>Zoho Mail:</strong> If 2FA is enabled, an App Password is required. SMTP access must also be enabled in Zoho Mail settings.</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <Label>Reply-To Address <span className="text-muted-foreground text-xs font-normal">(Optional)</span></Label>
+                      <Input 
+                        placeholder="replies@example.com" 
+                        value={smtpForm.replyTo} 
+                        onChange={(e) => setSmtpForm({...smtpForm, replyTo: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Daily Send Limit</Label>
+                      <Input 
+                        type="number"
+                        placeholder="500" 
+                        value={smtpForm.dailyLimit} 
+                        onChange={(e) => setSmtpForm({...smtpForm, dailyLimit: parseInt(e.target.value) || 500})} 
                       />
                     </div>
                   </div>

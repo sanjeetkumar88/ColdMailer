@@ -24,6 +24,7 @@ async function handleProxy(req: NextRequest) {
       method: req.method,
       headers,
       body: req.method !== 'GET' && req.method !== 'HEAD' ? await req.blob() : undefined,
+      redirect: 'manual', // Prevent proxy from following redirects (important for OAuth)
     });
 
     const responseHeaders = new Headers(backendRes.headers);

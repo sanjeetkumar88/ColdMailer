@@ -115,19 +115,16 @@ export default function CampaignsPage() {
           ? `/api/proxy/campaigns/${campaign.id}/retry` 
           : `/api/proxy/campaigns/${campaign.id}/launch`;
 
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          
-        })
-        const data = await res.json()
+        const res = await axios.post(endpoint)
+        const data = res.data
         if (data.success) {
           toast.success(campaign.failedCount > 0 ? "Smart retry started for failed emails!" : "Campaign re-launched!")
           fetchCampaigns()
         } else {
           toast.error(data.message || "Failed to resend")
         }
-      } catch (error) {
-        toast.error("Network error")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Network error")
       }
     } else if (action === 'followup') {
       window.location.href = `/dashboard/send?followup=${campaign.id}`
@@ -136,17 +133,14 @@ export default function CampaignsPage() {
     } else if (action === 'delete') {
       if (!confirm("Are you sure you want to delete this campaign?")) return;
       try {
-        const res = await fetch(`/api/proxy/campaigns/${campaign.id}`, {
-          method: 'DELETE',
-          
-        })
-        const data = await res.json()
+        const res = await axios.delete(`/api/proxy/campaigns/${campaign.id}`)
+        const data = res.data
         if (data.success) {
           toast.success("Campaign deleted")
           fetchCampaigns()
         }
-      } catch (error) {
-        toast.error("Failed to delete")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to delete")
       }
     }
   }

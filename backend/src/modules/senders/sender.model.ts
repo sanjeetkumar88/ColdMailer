@@ -3,13 +3,18 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface ISender extends Document {
   name: string;
   email: string;
+  replyTo?: string;
+  dailyLimit: number;
   provider: 'gmail' | 'ses' | 'sendgrid' | 'smtp';
   credentials: {
     apiKey?: string | null;
     accessToken?: string | null;
     refreshToken?: string | null;
     user?: string | null;
-    pass?: string | null;
+    pass?: string | null; // For legacy or unencrypted temporarily
+    encryptedPassword?: string | null;
+    iv?: string | null;
+    authTag?: string | null;
     host?: string | null;
     port?: number | null;
     region?: string | null;
@@ -25,6 +30,8 @@ const senderSchema = new Schema<ISender>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    replyTo: { type: String },
+    dailyLimit: { type: Number, default: 500 },
     provider: { 
       type: String, 
       required: true, 

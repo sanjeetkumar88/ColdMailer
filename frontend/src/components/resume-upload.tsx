@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import axios from "axios"
 
 export function ResumeUpload({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const { data: session } = useSession()
@@ -41,14 +42,10 @@ export function ResumeUpload({ onUploadSuccess }: { onUploadSuccess?: () => void
     formData.append("files", file)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/media/upload`, {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.message || "Upload failed")
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/media/upload`, formData)
+      
+      if (!res.data.success) {
+        throw new Error(res.data.message || "Upload failed")
       }
 
       setUploadProgress(100)
@@ -56,7 +53,7 @@ export function ResumeUpload({ onUploadSuccess }: { onUploadSuccess?: () => void
       setFile(null)
       if (onUploadSuccess) onUploadSuccess()
     } catch (error: any) {
-      toast.error(error.message)
+      toast.error(error.response?.data?.message || error.message || "Upload failed")
     } finally {
       setIsUploading(false)
       setUploadProgress(0)

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams, useRouter } from "next/navigation"
+import axios from "axios"
 import {
   Send,
   X,
@@ -19,9 +20,11 @@ import {
   Link2,
   Image as ImageIcon,
   ChevronDown,
-  Check
+  Check,
+  Sparkles
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -55,7 +58,9 @@ function SendEmailForm() {
 
   const [senders, setSenders] = useState<any[]>([])
   const [templates, setTemplates] = useState<any[]>([])
+  const [contactLists, setContactLists] = useState<any[]>([])
   const [selectedSender, setSelectedSender] = useState<string>("")
+  const [campaignName, setCampaignName] = useState("")
   const [recipients, setRecipients] = useState<string[]>([])
   const [recipientInput, setRecipientInput] = useState("")
   const [subject, setSubject] = useState("")
@@ -64,49 +69,67 @@ function SendEmailForm() {
   const [attachments, setAttachments] = useState<File[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [includeUnsubscribe, setIncludeUnsubscribe] = useState(true)
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  const token = (session?.user as any)?.accessToken;
-
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [sendersRes, templatesRes] = await Promise.all([
-          fetch(`${API_URL}/senders`, {
-            
-          }),
-          fetch(`${API_URL}/templates`, {
-            
-          })
-        ])
-        const sendersData = await sendersRes.json()
-        const templatesData = await templatesRes.json()
-        
-        if (sendersData.success) setSenders(sendersData.data)
-        if (templatesData.success) setTemplates(templatesData.data)
-        
-        if (sendersData.data?.length > 0) {
-          setSelectedSender(sendersData.data[0]._id)
+      const results = await Promise.allSettled([
+        axios.get(`/api/proxy/senders`),
+        axios.post(`/api/graphql-proxy`, {
+          query: `
+            query {
+              templates {
+                id
+                name
+                subject
+                html
+              }
+            }
+          `
+        }),
+        axios.get(`/api/proxy/contact-lists`)
+      ])
+
+      const [sendersRes, templatesRes, contactListsRes] = results
+
+      if (sendersRes.status === 'fulfilled' && sendersRes.value.data?.success) {
+        setSenders(sendersRes.value.data.data)
+        if (sendersRes.value.data.data?.length > 0) {
+          setSelectedSender(sendersRes.value.data.data[0]._id)
         }
-      } catch (error) {
-        console.error("Failed to fetch data:", error)
+      } else if (sendersRes.status === 'rejected') {
+        console.error("Failed to fetch senders:", sendersRes.reason)
       }
+
+      if (templatesRes.status === 'fulfilled' && !templatesRes.value.data?.errors) {
+        setTemplates(templatesRes.value.data.data?.templates || [])
+      } else if (templatesRes.status === 'rejected') {
+        console.error("Failed to fetch templates:", templatesRes.reason)
+      } else if (templatesRes.status === 'fulfilled' && templatesRes.value.data?.errors) {
+        console.error("GraphQL errors fetching templates:", templatesRes.value.data.errors)
+      }
+
+      if (contactListsRes.status === 'fulfilled' && contactListsRes.value.data?.success) {
+        setContactLists(contactListsRes.value.data.data)
+      } else if (contactListsRes.status === 'rejected') {
+        console.error("Failed to fetch contact lists:", contactListsRes.reason)
+      }
+      setIsLoading(false)
     }
-    if (token) fetchData()
-  }, [token, API_URL])
+    if (status === 'authenticated') fetchData()
+  }, [status])
 
   // Handle Follow-up / Duplicate logic
   useEffect(() => {
     const fetchSourceCampaign = async (id: string, isFollowup: boolean) => {
       try {
-        const res = await fetch(`${API_URL}/campaigns/${id}`, {
-          
-        })
-        const result = await res.json()
+        const res = await axios.get(`${API_URL}/campaigns/${id}`)
+        const result = res.data
         if (result.success) {
           const campaign = result.data
           setRecipients(campaign.recipients || [])
@@ -126,16 +149,33 @@ function SendEmailForm() {
       }
     }
 
-    if (token && (followupId || duplicateId)) {
+    if (status === 'authenticated' && (followupId || duplicateId)) {
       fetchSourceCampaign((followupId || duplicateId)!, !!followupId)
     }
-  }, [token, followupId, duplicateId, API_URL])
+  }, [status, followupId, duplicateId])
 
   const addRecipient = (email: string) => {
     const trimmedEmail = (email || "").trim().toLowerCase()
-    if (trimmedEmail && recipients && !recipients.includes(trimmedEmail) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setRecipients([...(recipients || []), trimmedEmail])
+    if (trimmedEmail && !recipients.includes(trimmedEmail) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setRecipients([...recipients, trimmedEmail])
       setRecipientInput("")
+    }
+  }
+
+  const loadContactList = async (listId: string) => {
+    try {
+      const res = await axios.get(`${API_URL}/contacts?listId=${listId}`, {
+        headers: { Authorization: `Bearer ${(session?.user as any)?.accessToken}` }
+      });
+      if (res.data.success) {
+        const emails = res.data.data.map((c: any) => c.email.toLowerCase());
+        const uniqueNewEmails = emails.filter((email: string) => !recipients.includes(email));
+        if (uniqueNewEmails.length > 0) {
+          setRecipients([...recipients, ...uniqueNewEmails]);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load contacts from list:", error);
     }
   }
 
@@ -154,7 +194,7 @@ function SendEmailForm() {
   }
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = templates.find(t => t._id === templateId)
+    const template = templates.find(t => t.id === templateId)
     if (template) {
       setSelectedTemplate(templateId)
       setSubject(template.subject)
@@ -184,14 +224,10 @@ function SendEmailForm() {
         const formData = new FormData()
         attachments.forEach(file => formData.append('files', file))
         
-        const uploadRes = await fetch(`${API_URL}/media/upload`, {
-          method: 'POST',
-          body: formData
-        })
+        const uploadRes = await axios.post(`${API_URL}/media/upload`, formData)
+        const uploadData = uploadRes.data
         
-        const uploadData = await uploadRes.json()
-        
-        if (!uploadRes.ok || !uploadData.success) {
+        if (!uploadData.success) {
           throw new Error(uploadData.message || "Failed to upload attachments. Campaign aborted.")
         }
         
@@ -203,33 +239,24 @@ function SendEmailForm() {
         : body
 
       // 2. Create Campaign
-      const campaignRes = await fetch(`${API_URL}/campaigns`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          
-        },
-        body: JSON.stringify({
-          name: `Campaign ${new Date().toLocaleString()}`,
-          sender: selectedSender,
-          template: selectedTemplate || (templates.length > 0 ? templates[0]._id : undefined),
-          recipients,
-          subject,
-          html: finalBody,
-          attachments: attachmentUrls,
-          status: 'draft'
-        })
+      const finalCampaignName = campaignName.trim() || `Campaign ${new Date().toLocaleString()}`
+      const campaignRes = await axios.post(`/api/proxy/campaigns`, {
+        name: finalCampaignName,
+        sender: selectedSender,
+        template: selectedTemplate || (templates.length > 0 ? templates[0].id : undefined),
+        recipients,
+        subject,
+        html: finalBody,
+        attachments: attachmentUrls,
+        status: 'draft'
       })
-      const campaignData = await campaignRes.json()
+      const campaignData = campaignRes.data
       
       if (!campaignData.success) throw new Error(campaignData.message)
 
-      // 2. Launch Campaign
-      const launchRes = await fetch(`${API_URL}/campaigns/${campaignData.data._id}/launch`, {
-        method: 'POST',
-        
-      })
-      const launchData = await launchRes.json()
+      // 3. Launch Campaign
+      const launchRes = await axios.post(`/api/proxy/campaigns/${campaignData.data._id}/launch`)
+      const launchData = launchRes.data
 
       if (launchData.success) {
         alert("Campaign launched successfully!")
@@ -241,32 +268,97 @@ function SendEmailForm() {
         setSelectedTemplate(null)
       }
     } catch (error: any) {
-      alert(`Failed to send: ${error.message}`)
+      alert(`Failed to send: ${error.response?.data?.message || error.message}`)
     } finally {
       setIsSending(false)
     }
   }
 
+  if (isLoading || status === 'loading') {
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-500">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <Card className="border-muted/40 shadow-sm">
+          <CardContent className="pt-6 space-y-8">
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <Skeleton className="h-24 w-full rounded-md" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-64 w-full rounded-md" />
+            </div>
+            <Skeleton className="h-12 w-32 rounded-full" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Send Email</h1>
-        <p className="text-muted-foreground mt-1">
-          Compose and send emails to one or multiple recipients
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent blur-3xl -z-10 rounded-full" />
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+          <Sparkles className="w-6 h-6 text-primary" />
+          Launch Campaign
+        </h1>
+        <p className="text-muted-foreground mt-2 text-lg">
+          Craft and deploy highly personalized email campaigns at scale.
         </p>
       </div>
 
-      <Card>
-        <CardContent className="pt-6 space-y-6">
+      <Card className="border-muted/30 shadow-lg shadow-black/5 bg-background/60 backdrop-blur-xl overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
+        <CardContent className="pt-8 space-y-8">
+          {/* Campaign Name */}
+          <div className="space-y-2 group">
+            <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80 group-focus-within:text-primary transition-colors">
+              Campaign Name
+            </Label>
+            <Input 
+              placeholder="E.g., Summer Outreach 2026"
+              value={campaignName}
+              onChange={(e) => setCampaignName(e.target.value)}
+              className="bg-muted/30 border-muted/50 focus-visible:ring-primary/20 transition-all hover:bg-muted/50"
+            />
+          </div>
+
           {/* Sender Selection */}
-          <div className="space-y-2">
-            <Label>From (Sender Account)</Label>
+          <div className="space-y-2 group">
+            <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80 group-focus-within:text-primary transition-colors">
+              From <span className="text-muted-foreground font-normal">(Sender Account)</span>
+            </Label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  <span className="flex items-center gap-2">
-                    <Send className="w-4 h-4" />
+                <Button variant="outline" className="w-full justify-between bg-muted/30 border-muted/50 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all">
+                  <span className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                      <Send className="w-4 h-4" />
+                    </div>
                     {selectedSender
                       ? senders.find(s => s._id === selectedSender)?.email
                       : "Select a sender account"}
@@ -292,11 +384,31 @@ function SendEmailForm() {
           </div>
 
           {/* Recipients */}
-          <div className="space-y-2">
-            <Label>Recipients</Label>
-            <div className="flex flex-wrap items-center gap-2 p-3 min-h-[48px] rounded-lg border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+          <div className="space-y-2 group">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80 group-focus-within:text-primary transition-colors">
+                Recipients
+              </Label>
+              {contactLists.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 text-xs text-primary">
+                      <Plus className="w-3 h-3 mr-1" /> Load Contact List
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {contactLists.map(list => (
+                      <DropdownMenuItem key={list._id} onClick={() => loadContactList(list._id)}>
+                        Load "{list.name}" list
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 p-3 min-h-[56px] rounded-lg border border-muted/50 bg-muted/30 focus-within:bg-background focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 transition-all shadow-inner">
               {recipients.map((email) => (
-                <Badge key={email} variant="secondary" className="gap-1 pr-1">
+                <Badge key={email} variant="secondary" className="gap-1 pr-1 py-1 px-3 bg-background border-muted shadow-sm hover:bg-muted/80 transition-colors">
                   {email}
                   <button
                     onClick={() => removeRecipient(email)}
@@ -321,16 +433,22 @@ function SendEmailForm() {
             </p>
           </div>
 
+          <Separator className="my-6 opacity-50" />
+
           {/* Template Selection */}
-          <div className="space-y-2">
-            <Label>Template (Optional)</Label>
+          <div className="space-y-2 group">
+            <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80 group-focus-within:text-primary transition-colors">
+              Template <span className="text-muted-foreground font-normal">(Optional)</span>
+            </Label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  <span className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
+                <Button variant="outline" className="w-full justify-between bg-muted/30 border-muted/50 hover:bg-muted/50 transition-all">
+                  <span className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-500">
+                      <FileText className="w-4 h-4" />
+                    </div>
                     {selectedTemplate
-                      ? templates.find(t => t._id === selectedTemplate)?.name
+                      ? templates.find(t => t.id === selectedTemplate)?.name
                       : "Select a template"}
                   </span>
                   <ChevronDown className="w-4 h-4 opacity-50" />
@@ -339,12 +457,12 @@ function SendEmailForm() {
               <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                 {templates.map((template) => (
                   <DropdownMenuItem
-                    key={template._id}
-                    onClick={() => handleTemplateSelect(template._id)}
+                    key={template.id}
+                    onClick={() => handleTemplateSelect(template.id)}
                     className="flex items-center justify-between"
                   >
                     <span>{template.name}</span>
-                    {selectedTemplate === template._id && (
+                    {selectedTemplate === template.id && (
                       <Check className="w-4 h-4 text-primary" />
                     )}
                   </DropdownMenuItem>
@@ -353,29 +471,27 @@ function SendEmailForm() {
             </DropdownMenu>
           </div>
 
-          {/* Subject */}
-          <div className="space-y-2">
-            <Label htmlFor="subject">Subject</Label>
-            <Input
-              id="subject"
+          {/* Subject Line */}
+          <div className="space-y-2 group">
+            <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80 group-focus-within:text-primary transition-colors">
+              Subject Line
+            </Label>
+            <Input 
+              placeholder="What is this email about?"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Email subject line"
+              className="bg-muted/30 border-muted/50 focus-visible:ring-primary/20 transition-all text-lg font-medium py-6"
             />
-            {subject?.includes("{{") && (
-              <p className="text-xs text-primary">
-                Placeholders like {"{{role}}"} will be replaced with actual values
-              </p>
-            )}
           </div>
 
-          {/* Message Body */}
-          <div className="space-y-2">
-            <Label htmlFor="body">Message</Label>
-            <div className="border rounded-lg overflow-hidden">
-              {/* Rich text toolbar */}
-              <div className="flex items-center gap-1 p-2 border-b bg-muted/30">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+          {/* Body */}
+          <div className="space-y-2 group">
+            <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80 group-focus-within:text-primary transition-colors">
+              Message
+            </Label>
+            <div className="border border-muted/50 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 transition-all shadow-sm">
+              <div className="flex items-center gap-1 p-2 bg-muted/40 border-b border-muted/50">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
                   <Bold className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -395,86 +511,64 @@ function SendEmailForm() {
                   <ImageIcon className="w-4 h-4" />
                 </Button>
               </div>
-              <Textarea
-                id="body"
+              <Textarea 
+                placeholder="Type your message here..."
+                className="min-h-[300px] border-0 focus-visible:ring-0 rounded-none bg-background/50 resize-y p-4 text-base leading-relaxed"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                placeholder="Write your email message..."
-                className="min-h-[200px] border-0 rounded-none focus-visible:ring-0 resize-none"
               />
             </div>
           </div>
 
-          {/* Attachments */}
-          <div className="space-y-2">
-            <Label>Attachments</Label>
-            <input
+          {/* Attachments & Options */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-muted/30">
+            <div className="flex flex-wrap items-center gap-3">
+              <input 
               type="file"
               ref={fileInputRef}
               onChange={handleFileSelect}
               multiple
               className="hidden"
-            />
-            {attachments.length > 0 && (
-              <div className="space-y-2 mb-3">
-                {attachments.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
-                  >
-                    <Paperclip className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm flex-1 truncate">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {(file.size / 1024).toFixed(1)} KB
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => removeAttachment(index)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full border-dashed"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Attachment
-            </Button>
-          </div>
-
-          {/* Unsubscribe Option */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label className="text-base">Include Opt-Out (Unsubscribe) Text</Label>
-              <CardDescription>
-                Automatically appends a soft opt-out message to the bottom of the email to protect domain reputation and avoid spam reports.
-              </CardDescription>
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                {attachments.length > 0 ? `${attachments.length} file(s)` : "Attach"}
+              </Button>
             </div>
-            <Switch
-              checked={includeUnsubscribe}
-              onCheckedChange={setIncludeUnsubscribe}
-            />
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border border-muted/50">
+                <Switch 
+                  id="unsubscribe"
+                  checked={includeUnsubscribe}
+                  onCheckedChange={setIncludeUnsubscribe}
+                  className="data-[state=checked]:bg-primary"
+                />
+                <Label htmlFor="unsubscribe" className="text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+                  Unsubscribe Link
+                </Label>
+              </div>
+            </div>
           </div>
 
-          <Separator />
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-between">
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-6">
             <Dialog open={showPreview} onOpenChange={setShowPreview}>
               <DialogTrigger asChild>
-                <Button variant="outline" disabled={!subject || !body}>
+                <Button 
+                  variant="ghost" 
+                  disabled={!subject || !body}
+                  className="hover:bg-muted/50"
+                >
                   <Eye className="w-4 h-4 mr-2" />
-                  Preview Email
+                  Preview
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl bg-background/95 backdrop-blur-xl border-muted/50">
                 <DialogHeader>
                   <DialogTitle>Email Preview</DialogTitle>
                   <DialogDescription>
@@ -496,10 +590,10 @@ function SendEmailForm() {
                     <div className="text-sm text-muted-foreground">Subject:</div>
                     <div className="font-medium">{subject || "No subject"}</div>
                   </div>
-                  <Separator />
+                  <Separator className="opacity-50" />
                   <div className="space-y-1">
                     <div className="text-sm text-muted-foreground">Message:</div>
-                    <div className="whitespace-pre-wrap text-sm bg-muted/30 p-4 rounded-lg">
+                    <div className="whitespace-pre-wrap text-sm bg-muted/20 p-4 rounded-xl border border-muted/30">
                       {body || "No message content"}
                       {includeUnsubscribe && (
                         <div className="mt-4 text-muted-foreground">
@@ -514,7 +608,7 @@ function SendEmailForm() {
                       <div className="text-sm text-muted-foreground">Attachments:</div>
                       <div className="flex flex-wrap gap-2">
                         {attachments.map((file, i) => (
-                          <Badge key={i} variant="outline">
+                          <Badge key={i} variant="outline" className="bg-background">
                             <Paperclip className="w-3 h-3 mr-1" />
                             {file.name}
                           </Badge>
@@ -533,21 +627,15 @@ function SendEmailForm() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-
-            <Button
-              onClick={handleSend}
-              disabled={recipients.length === 0 || !subject || !body || isSending}
-              className="sm:w-auto"
+            <Button 
+              onClick={handleSend} 
+              disabled={isSending || !selectedSender || recipients.length === 0 || !subject}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 px-8 py-6 rounded-xl font-medium text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              {isSending ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Sending...
-                </span>
-              ) : (
+              {isSending ? "Sending..." : (
                 <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Email{recipients.length > 1 ? ` (${recipients.length})` : ""}
+                  <Send className="w-5 h-5 mr-2" />
+                  Send Campaign
                 </>
               )}
             </Button>

@@ -22,7 +22,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { ResumeUpload } from "@/components/resume-upload"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback } from "react"
 import {
@@ -48,9 +47,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession()
   const [dashboardStats, setDashboardStats] = useState(initialStats)
   const [recentActivityData, setRecentActivityData] = useState(initialActivity)
-  const [resumes, setResumes] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isResumesLoading, setIsResumesLoading] = useState(true)
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
   const token = (session?.user as any)?.accessToken
@@ -81,13 +78,6 @@ export default function DashboardPage() {
               sender { email }
               updatedAt
             }
-            mediaFiles {
-              id
-              originalName
-              size
-              url
-              createdAt
-            }
           }
         `
       });
@@ -96,7 +86,7 @@ export default function DashboardPage() {
       if (json.errors) {
         console.error("GraphQL errors:", json.errors);
       } else if (json.data) {
-        const { dashboardStats: s, recentCampaigns: campaigns, mediaFiles } = json.data;
+        const { dashboardStats: s, recentCampaigns: campaigns } = json.data;
         setDashboardStats([
           { 
             name: "Total Emails Sent", 
@@ -148,9 +138,6 @@ export default function DashboardPage() {
           time: new Date(Number(c.updatedAt) || c.updatedAt).toLocaleDateString()
         }))
         setRecentActivityData(mappedActivity)
-        
-        setResumes(mediaFiles || [])
-        setIsResumesLoading(false)
       }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error)
@@ -158,30 +145,6 @@ export default function DashboardPage() {
       setIsLoading(false)
     }
   }, [status])
-
-  const fetchResumes = useCallback(async () => {
-    // Media files are now fetched in fetchDashboardData
-    fetchDashboardData()
-  }, [fetchDashboardData])
-
-  const handleDeleteResume = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this resume?")) return
-    try {
-      const res = await fetch(`${API_URL}/media/${id}`, {
-        method: 'DELETE',
-        
-      })
-      const data = await res.json()
-      if (data.success) {
-        toast.success("Resume deleted")
-        fetchResumes()
-      } else {
-        toast.error(data.message || "Failed to delete")
-      }
-    } catch (error) {
-      toast.error("Failed to delete resume")
-    }
-  }
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -209,19 +172,16 @@ export default function DashboardPage() {
           ? `${API_URL}/campaigns/${activity.id}/retry` 
           : `${API_URL}/campaigns/${activity.id}/launch`;
           
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          
-        })
-        const data = await res.json()
+        const res = await axios.post(endpoint)
+        const data = res.data
         if (data.success) {
           toast.success(activity.progress.failed > 0 ? "Smart retry started for failed emails!" : "Campaign re-launched successfully!")
           fetchDashboardData()
         } else {
           toast.error(data.message || "Failed to resend")
         }
-      } catch (error) {
-        toast.error("Network error occurred")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Network error occurred")
       }
     } else if (action === 'followup') {
       window.location.href = `/dashboard/send?followup=${activity.id}`
@@ -230,22 +190,19 @@ export default function DashboardPage() {
     } else if (action === 'delete') {
       if (!confirm("Are you sure you want to delete this campaign? This cannot be undone.")) return;
       try {
-        const res = await fetch(`${API_URL}/campaigns/${activity.id}`, {
-          method: 'DELETE',
-          
-        })
-        const data = await res.json()
+        const res = await axios.delete(`${API_URL}/campaigns/${activity.id}`)
+        const data = res.data
         if (data.success) {
           toast.success("Campaign deleted")
           fetchDashboardData()
         }
-      } catch (error) {
-        toast.error("Failed to delete")
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to delete")
       }
     }
   }
 
-  if (status === 'loading' || (isLoading && token)) {
+  if (status === 'loading' || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
@@ -431,64 +388,6 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Resume Section */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Resume Manager</CardTitle>
-            <CardDescription>Upload and manage your resumes for outreach</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResumeUpload onUploadSuccess={fetchResumes} />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>My Documents</CardTitle>
-            <CardDescription>Recently uploaded files</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isResumesLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : resumes.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">Your resumes will appear here once uploaded.</p>
-            ) : (
-              <div className="space-y-3">
-                {resumes.map((resume) => (
-                  <div key={resume._id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 group border border-transparent hover:border-primary/20 transition-all">
-                    <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{resume.originalName}</p>
-                      <p className="text-[10px] text-muted-foreground">{(resume.size / 1024 / 1024).toFixed(2)} MB • {new Date(resume.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                        <a href={resume.url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteResume(resume._id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

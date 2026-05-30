@@ -2,6 +2,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { Mail, ArrowRight, Menu, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { NavBarLogo } from "./navbar-logo"
 
 // Dynamic Imports for sections - keeping SSR: true for initial HTML delivery
 const Hero = dynamic(() => import("./sections/hero").then(mod => mod.Hero), { 
@@ -39,12 +40,7 @@ export function HomeContent() {
       <header className="fixed top-0 z-[60] w-full border-b border-black/[0.03] bg-white/70 backdrop-blur-xl">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-100 animate-float">
-                <Mail className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-2xl font-bold tracking-tighter">ColdMailer</span>
-            </Link>
+            <NavBarLogo />
           </div>
           <nav className="hidden lg:flex items-center gap-10 text-sm font-bold uppercase tracking-widest text-black/40">
             <Link href="#features" className="hover:text-indigo-600 transition-colors">Features</Link>

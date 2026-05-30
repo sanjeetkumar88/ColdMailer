@@ -49,7 +49,7 @@ export class SenderAuthService {
       userId: new Types.ObjectId(userId) as any,
     };
 
-    // Note: SenderService.createSender already handles encryption if we pass credentials
-    return await SenderService.createSender(senderData);
+    // Use upsertSender instead of createSender to avoid duplicate email errors on reconnect
+    return await SenderService.upsertSender(senderData);
   }
 }

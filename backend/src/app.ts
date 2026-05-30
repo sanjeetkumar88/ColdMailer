@@ -7,6 +7,7 @@ import authRoutes from './modules/auth/auth.routes';
 import senderRoutes from './modules/senders/sender.routes';
 import campaignRoutes from './modules/campaigns/campaign.routes';
 import contactRoutes from './modules/contacts/contact.routes';
+import contactListRoutes from './modules/contacts/contact-list.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import mediaRoutes from './modules/media/media.routes';
 
@@ -14,6 +15,8 @@ import helmet from 'helmet';
 import { apiRateLimiter, authRateLimiter } from './shared/middleware/rate-limiter.middleware';
 
 const app = express();
+
+app.set('trust proxy', 1); // Trust first proxy (Next.js frontend)
 
 app.use(helmet());
 app.use(cors({
@@ -32,6 +35,7 @@ app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/senders', senderRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/contact-lists', contactListRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/media', mediaRoutes);
 

@@ -103,8 +103,8 @@ export default function CampaignDetailPage() {
 
   useEffect(() => {
     fetchData()
-    if (campaign?.status === 'processing') {
-      const interval = setInterval(fetchData, 10000)
+    if (campaign?.status === 'processing' || campaign?.status === 'scheduled') {
+      const interval = setInterval(fetchData, 5000)
       return () => clearInterval(interval)
     }
   }, [fetchData, campaign?.status])
@@ -113,22 +113,16 @@ export default function CampaignDetailPage() {
     if (!id) return
     setIsRetrying(email)
     try {
-      const res = await fetch(`/api/proxy/campaigns/${id}/retry`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ emails: [email] })
-      })
-      const data = await res.json()
+      const res = await axios.post(`/api/proxy/campaigns/${id}/retry`, { emails: [email] })
+      const data = res.data
       if (data.success) {
         toast.success(`Retry started for ${email}`)
         fetchData()
       } else {
         toast.error(data.message || "Failed to retry")
       }
-    } catch (error) {
-      toast.error("Network error")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Network error")
     } finally {
       setIsRetrying(null)
     }
@@ -137,16 +131,13 @@ export default function CampaignDetailPage() {
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this campaign?")) return
     try {
-      const res = await fetch(`/api/proxy/campaigns/${id}`, {
-        method: 'DELETE',
-        
-      })
-      if (res.ok) {
+      const res = await axios.delete(`/api/proxy/campaigns/${id}`)
+      if (res.status === 200) {
         toast.success("Campaign deleted")
         router.push('/dashboard/campaigns')
       }
-    } catch (error) {
-      toast.error("Failed to delete")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete")
     }
   }
 
@@ -297,46 +288,68 @@ export default function CampaignDetailPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y border-t max-h-[500px] overflow-y-auto">
-                {events.length === 0 ? (
+                {events.length === 0 && (!campaign?.recipients || campaign.recipients.length === 0) ? (
                   <div className="p-8 text-center text-muted-foreground">
                     No activity recorded yet
                   </div>
                 ) : (
-                  events.map((event) => (
-                    <div key={event.id} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors group">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                        event.type === 'sent' ? 'bg-primary/10 text-primary' : 
-                        event.type === 'opened' ? 'bg-blue-500/10 text-blue-500' :
-                        'bg-destructive/10 text-destructive'
-                      }`}>
-                        {event.type === 'sent' ? <Send className="w-4 h-4" /> : 
-                         event.type === 'opened' ? <Eye className="w-4 h-4" /> : 
-                         <XCircle className="w-4 h-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium">{event.recipientEmail}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {event.type === 'sent' ? 'Email delivered' : 
-                           event.type === 'opened' ? 'Email opened' : 
-                           `Failed: ${event.error || 'Unknown error'}`}
+                  <>
+                    {events.map((event) => (
+                      <div key={event.id} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors group">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                          event.type === 'sent' ? 'bg-primary/10 text-primary' : 
+                          event.type === 'opened' ? 'bg-blue-500/10 text-blue-500' :
+                          'bg-destructive/10 text-destructive'
+                        }`}>
+                          {event.type === 'sent' ? <Send className="w-4 h-4" /> : 
+                           event.type === 'opened' ? <Eye className="w-4 h-4" /> : 
+                           <XCircle className="w-4 h-4" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium">{event.recipientEmail}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {event.type === 'sent' ? 'Email delivered' : 
+                             event.type === 'opened' ? 'Email opened' : 
+                             `Failed: ${event.error || 'Unknown error'}`}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-[10px] text-muted-foreground text-right">
+                            {event.createdAt ? new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending'}
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            disabled={isRetrying === event.recipientEmail}
+                            onClick={() => handleResendSingle(event.recipientEmail)}
+                          >
+                            <RotateCcw className={`h-4 w-4 ${isRetrying === event.recipientEmail ? 'animate-spin' : ''}`} />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-[10px] text-muted-foreground text-right">
-                          {event.createdAt ? new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending'}
+                    ))}
+                    
+                    {/* Render Pending Emails */}
+                    {campaign?.recipients?.filter((email: string) => 
+                      !events.some(e => e.recipientEmail === email && (e.type === 'sent' || e.type === 'failed'))
+                    ).map((email: string, index: number) => (
+                      <div key={`pending-${index}`} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors opacity-60">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
+                          <Clock className="w-4 h-4" />
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          disabled={isRetrying === event.recipientEmail}
-                          onClick={() => handleResendSingle(event.recipientEmail)}
-                        >
-                          <RotateCcw className={`h-4 w-4 ${isRetrying === event.recipientEmail ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium">{email}</div>
+                          <div className="text-xs text-muted-foreground">Queued for sending...</div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-[10px] text-muted-foreground text-right">
+                            Pending
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </>
                 )}
               </div>
             </CardContent>

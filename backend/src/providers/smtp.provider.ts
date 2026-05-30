@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { IEmailProvider } from './provider.interface';
 import { ISender } from '../modules/senders/sender.model';
+import { decrypt } from '../shared/utils/encryption';
 
 export class SmtpProvider implements IEmailProvider {
   private transporter: nodemailer.Transporter;
@@ -10,10 +11,23 @@ export class SmtpProvider implements IEmailProvider {
       throw new Error('SMTP credentials are required');
     }
 
-    const { host, port, user, pass } = sender.credentials;
+    const { host, port, user, pass, encryptedPassword, iv, authTag } = sender.credentials;
     
-    if (!host || !port || !user || !pass) {
+    if (!host || !port || !user) {
       throw new Error('Incomplete SMTP credentials');
+    }
+
+    let actualPass = pass;
+    if (encryptedPassword && iv && authTag) {
+      try {
+        actualPass = decrypt({ content: encryptedPassword, iv, authTag });
+      } catch (err) {
+        throw new Error('Failed to decrypt SMTP password');
+      }
+    }
+
+    if (!actualPass) {
+      throw new Error('No SMTP password available');
     }
 
     this.transporter = nodemailer.createTransport({
@@ -22,7 +36,7 @@ export class SmtpProvider implements IEmailProvider {
       secure: Number(port) === 465, // true for 465, false for other ports
       auth: {
         user,
-        pass,
+        pass: actualPass,
       },
     });
   }
@@ -34,7 +48,8 @@ export class SmtpProvider implements IEmailProvider {
       subject: options.subject,
       html: options.html,
       text: options.text,
-      // You could also map replyTo, headers, etc. if provided in options
+      replyTo: this.sender.replyTo || undefined,
+      // You could also map headers, etc. if provided in options
     };
 
     try {

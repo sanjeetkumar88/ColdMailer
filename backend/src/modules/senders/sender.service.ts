@@ -13,15 +13,29 @@ export class SenderService {
     return await Sender.create(data);
   }
 
+  static async upsertSender(data: Partial<ISender>) {
+    if (data.credentials) {
+      const creds = data.credentials as any;
+      if (creds.pass) creds.pass = encrypt(creds.pass);
+      if (creds.apiKey) creds.apiKey = encrypt(creds.apiKey);
+      if (creds.refreshToken) creds.refreshToken = encrypt(creds.refreshToken);
+    }
+    
+    // Find existing sender by email and userId, and update it. If it doesn't exist, create it.
+    const sender = await Sender.findOneAndUpdate(
+      { email: data.email, userId: data.userId } as any,
+      { $set: data },
+      { new: true, upsert: true }
+    );
+    return sender;
+  }
+
   static async getSenders(userId: string) {
-    return await Sender.find({ userId } as any);
+    return await Sender.find({ userId } as any).select('-credentials');
   }
 
   static async getSenderById(id: string, userId: string) {
-    const sender = await Sender.findOne({ _id: id, userId } as any);
-    if (sender && sender.credentials) {
-      // Decrypt for internal use if needed, but usually we do it in the worker
-    }
+    const sender = await Sender.findOne({ _id: id, userId } as any).select('-credentials');
     return sender;
   }
 

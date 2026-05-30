@@ -39,12 +39,12 @@ export function AppSidebar() {
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-border bg-sidebar">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5">
+      <Link href="/dashboard" className="flex items-center gap-3 px-6 py-5 hover:opacity-80 transition-opacity">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
           <Zap className="w-5 h-5 text-primary-foreground" />
         </div>
         <span className="text-xl font-bold text-sidebar-foreground">ColdMailer</span>
-      </div>
+      </Link>
 
       <Separator className="bg-sidebar-border" />
 

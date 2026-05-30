@@ -1,9 +1,28 @@
 import { Request, Response } from 'express';
 import { CampaignService } from './campaign.service';
 import { asyncHandler } from '../../shared/utils/asyncHandler';
+import { TemplateService } from '../templates/template.service';
 
 export const createCampaign = asyncHandler(async (req: any, res: Response) => {
-  const campaign = await CampaignService.createCampaign({ ...req.body, userId: req.user.id });
+  let templateId = req.body.template;
+
+  // If no template is provided, but we have subject and html, create an ad-hoc template
+  if (!templateId && req.body.subject && req.body.html) {
+    const adhocTemplate = await TemplateService.createTemplate({
+      name: `Ad-hoc Template for ${req.body.name}`,
+      subject: req.body.subject,
+      html: req.body.html,
+      text: req.body.html.replace(/<[^>]*>?/gm, ''), // Basic html to text fallback
+      userId: req.user.id
+    });
+    templateId = adhocTemplate._id;
+  }
+
+  if (!templateId) {
+    return res.status(400).json({ success: false, message: 'Template or Subject+HTML is required' });
+  }
+
+  const campaign = await CampaignService.createCampaign({ ...req.body, template: templateId, userId: req.user.id });
   res.status(201).json({
     success: true,
     data: campaign,
