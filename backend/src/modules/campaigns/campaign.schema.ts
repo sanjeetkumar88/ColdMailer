@@ -20,6 +20,7 @@ export const campaignTypeDefs = `#graphql
     openedCount: Int
     sender: CampaignSender
     template: CampaignTemplate
+    contactList: String
     createdAt: String
     updatedAt: String
   }

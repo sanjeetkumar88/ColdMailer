@@ -71,6 +71,7 @@ function SendEmailForm() {
   const [isSending, setIsSending] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [includeUnsubscribe, setIncludeUnsubscribe] = useState(true)
+  const [loadedListId, setLoadedListId] = useState<string | null>(null)
   const { data: session, status } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -173,6 +174,7 @@ function SendEmailForm() {
         if (uniqueNewEmails.length > 0) {
           setRecipients([...recipients, ...uniqueNewEmails]);
         }
+        setLoadedListId(listId);
       }
     } catch (error) {
       console.error("Failed to load contacts from list:", error);
@@ -247,6 +249,7 @@ function SendEmailForm() {
         recipients,
         subject,
         html: finalBody,
+        contactList: loadedListId,
         attachments: attachmentUrls,
         status: 'draft'
       })

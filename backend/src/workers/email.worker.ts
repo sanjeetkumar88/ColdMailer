@@ -13,7 +13,7 @@ import { CacheKeys } from '../cache/keys';
 export const emailWorker = new Worker(
   'email',
   async (job: Job) => {
-    const { campaignId, recipientEmail, senderId, templateId, variables, attachments } = job.data;
+    const { campaignId, recipientEmail, senderId, templateId, contactList, variables, attachments } = job.data;
 
     // Cache sender
     let sender = await cacheService.get<any>(CacheKeys.sender(senderId));
@@ -34,7 +34,11 @@ export const emailWorker = new Worker(
     if (!template) throw new Error(`Template ${templateId} not found`);
 
     // Fetch contact for personalization
-    const contact = await Contact.findOne({ email: recipientEmail }).lean();
+    const query: any = { email: recipientEmail };
+    if (contactList) {
+      query.listId = contactList;
+    }
+    const contact = await Contact.findOne(query).lean();
 
     // Render template
     const { subject, html, text } = renderTemplate(template, {

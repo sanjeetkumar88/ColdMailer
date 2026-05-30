@@ -52,6 +52,7 @@ export const campaignWorker = new Worker(
             recipientEmail: email,
             senderId: campaign.sender._id,
             templateId: campaign.template._id,
+            contactList: campaign.contactList,
             variables: campaign.variables ?? {},
             attachments: campaign.attachments ?? [],
           },

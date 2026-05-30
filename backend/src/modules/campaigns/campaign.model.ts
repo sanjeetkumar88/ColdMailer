@@ -8,6 +8,7 @@ export interface ICampaign extends Document {
   attachments?: string[]; // URLs or paths to files
   status: 'draft' | 'scheduled' | 'processing' | 'completed' | 'paused' | 'failed';
   variables?: Record<string, string>; // Global variables for the campaign
+  contactList?: Types.ObjectId;
   userId: Types.ObjectId;
   scheduledAt?: Date;
   sentCount: number;
@@ -30,6 +31,7 @@ const campaignSchema = new Schema<ICampaign>(
       default: 'draft'
     },
     variables: { type: Map, of: String },
+    contactList: { type: Schema.Types.ObjectId, ref: 'ContactList' },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     scheduledAt: { type: Date },
     sentCount: { type: Number, default: 0 },
