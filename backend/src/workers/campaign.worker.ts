@@ -41,8 +41,8 @@ export const campaignWorker = new Worker(
       const chunk = recipients.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
 
       const jobs = chunk.map((email) => {
-        // Random gap between 3 seconds and 5 seconds for faster testing (instead of 30s-90s)
-        const randomGap = Math.floor(Math.random() * (5000 - 3000 + 1)) + 3000;
+        // Random gap between 30 seconds and 90 seconds for human-like sending
+        const randomGap = Math.floor(Math.random() * (90000 - 30000 + 1)) + 30000;
         cumulativeDelay += randomGap;
 
         return {
