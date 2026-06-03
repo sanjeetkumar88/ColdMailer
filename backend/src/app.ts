@@ -48,10 +48,8 @@ app.use('/api/admin', adminRoutes);
 app.get('/health', async (req: express.Request, res: express.Response) => {
   try {
     const mongoState = mongoose.connection.readyState;
-    const redisStatus = redisClient.status;
-    
     const isMongoHealthy = mongoState === 1; // 1 = connected
-    const isRedisHealthy = redisStatus === 'ready';
+    const isRedisHealthy = redisClient.isReady;
 
     if (isMongoHealthy && isRedisHealthy) {
       res.status(200).json({ status: 'ok', mongo: 'connected', redis: 'ready' });
@@ -59,7 +57,7 @@ app.get('/health', async (req: express.Request, res: express.Response) => {
       res.status(503).json({ 
         status: 'error', 
         mongo: isMongoHealthy ? 'connected' : 'disconnected', 
-        redis: redisStatus 
+        redis: isRedisHealthy ? 'ready' : 'disconnected'
       });
     }
   } catch (error) {
