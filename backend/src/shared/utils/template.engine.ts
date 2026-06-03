@@ -27,9 +27,9 @@ export const renderTemplate = (template: { html: string; text?: string; subject:
   // Compile MJML to HTML
   const mjmlResult = mjml2html(mjmlMarkup, {
     validationLevel: 'soft', // ignore minor HTML errors inside mj-text
-  });
+  }) as any;
 
-  if (mjmlResult.errors.length > 0) {
+  if (mjmlResult.errors && mjmlResult.errors.length > 0) {
     console.warn('[TemplateEngine] MJML Compilation Warnings:', mjmlResult.errors);
   }
 
