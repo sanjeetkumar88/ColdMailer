@@ -18,7 +18,11 @@ export async function POST(req: NextRequest) {
   headers.delete('host');
 
   try {
-    const backendRes = await fetch('http://127.0.0.1:5000/graphql', {
+    const BACKEND_URL = process.env.BACKEND_API_URL 
+      ? process.env.BACKEND_API_URL.replace(/\/api$/, '') 
+      : 'http://127.0.0.1:5000';
+
+    const backendRes = await fetch(`${BACKEND_URL}/graphql`, {
       method: 'POST',
       headers,
       body: await req.text()

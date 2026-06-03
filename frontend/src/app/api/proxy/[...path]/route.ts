@@ -20,7 +20,11 @@ async function handleProxy(req: NextRequest) {
   const query = req.nextUrl.search;
 
   try {
-    const backendRes = await fetch(`http://127.0.0.1:5000${path}${query}`, {
+    const BACKEND_URL = process.env.BACKEND_API_URL 
+      ? process.env.BACKEND_API_URL.replace(/\/api$/, '') 
+      : 'http://127.0.0.1:5000';
+
+    const backendRes = await fetch(`${BACKEND_URL}${path}${query}`, {
       method: req.method,
       headers,
       body: req.method !== 'GET' && req.method !== 'HEAD' ? await req.blob() : undefined,
