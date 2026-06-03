@@ -81,9 +81,9 @@ jobs:
       - name: Trigger Render Deployment (Backend)
         run: |
           # Sends a secure POST request to your Render Deploy Hook
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
       - name: Trigger Vercel Deployment (Frontend)
         run: |
           # Sends a secure POST request to your Vercel Deploy Hook
-          curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+          curl -f -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
