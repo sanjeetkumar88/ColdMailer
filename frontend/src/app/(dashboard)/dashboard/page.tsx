@@ -21,6 +21,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback } from "react"
@@ -202,12 +203,12 @@ export default function DashboardPage() {
     }
   }
 
-  if (status === 'loading' || isLoading) {
+  if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading dashboard data...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">Authenticating...</p>
         </div>
       </div>
     )
@@ -244,16 +245,28 @@ export default function DashboardPage() {
               <stat.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center gap-1 mt-1">
-                <span className={`text-xs font-medium flex items-center ${
-                  stat.trend === "up" ? "text-primary" : "text-destructive"
-                }`}>
-                  {stat.trend === "up" ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
-                  {stat.change}
-                </span>
-                <span className="text-xs text-muted-foreground">{stat.description}</span>
-              </div>
+              {isLoading ? (
+                <div className="space-y-2 mt-2">
+                  <Skeleton className="h-8 w-20" />
+                  <div className="flex gap-2 mt-2">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className={`text-xs font-medium flex items-center ${
+                      stat.trend === "up" ? "text-primary" : "text-destructive"
+                    }`}>
+                      {stat.trend === "up" ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
+                      {stat.change}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{stat.description}</span>
+                  </div>
+                </>
+              )}
             </CardContent>
             <div className="absolute bottom-0 left-0 h-1 bg-primary/10 w-full group-hover:bg-primary/20 transition-colors" />
           </Card>
@@ -277,7 +290,18 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
-            {recentActivityData.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-muted/10">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-md" />
+                </div>
+              ))
+            ) : recentActivityData.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4 text-muted-foreground">
                   <Mail className="w-8 h-8" />

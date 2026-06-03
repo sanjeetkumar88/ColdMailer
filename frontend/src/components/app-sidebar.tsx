@@ -11,7 +11,8 @@ import {
   Zap,
   LogOut,
   ChevronRight,
-  Send
+  Send,
+  Sparkles
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -37,19 +38,31 @@ export function AppSidebar() {
     : "JD"
 
   return (
-    <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-border bg-sidebar">
+    <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 border-r border-border/50 bg-gradient-to-b from-sidebar/95 to-sidebar/50 backdrop-blur-xl shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-40">
       {/* Logo */}
-      <Link href="/dashboard" className="flex items-center gap-3 px-6 py-5 hover:opacity-80 transition-opacity">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-          <Zap className="w-5 h-5 text-primary-foreground" />
-        </div>
-        <span className="text-xl font-bold text-sidebar-foreground">ColdMailer</span>
-      </Link>
+      <div className="px-6 py-6 flex items-center">
+        <Link href="/dashboard" className="flex items-center gap-3 group transition-all">
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-all duration-300 group-hover:scale-105">
+            <Zap className="w-5 h-5 text-white" />
+            <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 tracking-tight">
+              ColdMailer
+            </span>
+            <span className="text-[10px] font-medium text-primary tracking-widest uppercase opacity-80 flex items-center gap-1">
+              Workspace <Sparkles className="w-3 h-3" />
+            </span>
+          </div>
+        </Link>
+      </div>
 
-      <Separator className="bg-sidebar-border" />
+      <div className="px-4 mb-2">
+        <Separator className="bg-border/50" />
+      </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
         {navigation.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
@@ -57,16 +70,35 @@ export function AppSidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group",
+                "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden",
                 isActive 
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  ? "text-primary shadow-sm bg-primary/10" 
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
-              {item.name}
               {isActive && (
-                <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+              )}
+              
+              <div className={cn(
+                "flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300",
+                isActive ? "bg-background shadow-sm text-primary" : "text-muted-foreground group-hover:text-foreground group-hover:bg-background/50 group-hover:shadow-sm"
+              )}>
+                <item.icon className={cn(
+                  "w-4 h-4 transition-transform duration-300", 
+                  isActive ? "scale-110" : "group-hover:scale-110 group-hover:-rotate-3"
+                )} />
+              </div>
+              
+              <span className={cn(
+                "flex-1 transition-transform duration-300",
+                isActive ? "translate-x-0" : "group-hover:translate-x-1"
+              )}>
+                {item.name}
+              </span>
+              
+              {isActive && (
+                <ChevronRight className="w-4 h-4 ml-auto text-primary opacity-70 animate-in slide-in-from-left-2 fade-in" />
               )}
             </Link>
           )
@@ -74,25 +106,32 @@ export function AppSidebar() {
       </nav>
 
       {/* User section */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 px-2 py-2">
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-medium text-primary">{initials}</span>
+      <div className="p-4 mt-auto">
+        <div className="rounded-2xl bg-muted/40 border border-border/50 p-1 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-3 py-3">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-md shadow-primary/20">
+                <span className="text-sm font-bold text-primary-foreground">{initials}</span>
+              </div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-foreground truncate">{user?.name || "User"}</div>
+              <div className="text-xs text-muted-foreground truncate font-medium">{user?.email || "user@example.com"}</div>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-sidebar-foreground truncate">{user?.name || "User"}</div>
-            <div className="text-xs text-muted-foreground truncate">{user?.email || "user@example.com"}</div>
+          <div className="px-1 pb-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-xl h-9"
+              onClick={() => signOut({ callbackUrl: '/login' })}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign out
+            </Button>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full justify-start mt-2 text-muted-foreground hover:text-foreground"
-          onClick={() => signOut({ callbackUrl: '/login' })}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign out
-        </Button>
       </div>
     </aside>
   )
