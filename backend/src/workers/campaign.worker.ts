@@ -95,6 +95,14 @@ campaignWorker.on('error', (err) => {
   console.error('[CampaignWorker] Global error:', err);
 });
 
-campaignWorker.on('failed', (job, err) => {
+campaignWorker.on('failed', async (job, err) => {
   console.error(`[CampaignWorker] Job ${job?.id} failed:`, err);
+  if (job) {
+    if (job.attemptsMade >= (job.opts.attempts || 3)) {
+      console.log(`[CampaignWorker] Job ${job.id} exhausted all attempts. Sending to DLQ.`);
+      await import('../queues/dlq.queue').then(({ dlqQueue }) => {
+        return dlqQueue.add('dead-campaign', { ...job.data, failureReason: err.message, failedAt: new Date() });
+      }).catch(e => console.error('Failed to push to DLQ:', e));
+    }
+  }
 });

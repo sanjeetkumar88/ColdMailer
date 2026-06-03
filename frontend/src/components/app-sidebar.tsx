@@ -7,12 +7,13 @@ import {
   Mail, 
   FileText, 
   Users, 
-  Settings, 
+  Settings,
   Zap,
   LogOut,
   ChevronRight,
   Send,
-  Sparkles
+  Sparkles,
+  Megaphone
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,7 @@ import { signOut, useSession } from "next-auth/react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone },
   { name: "Send Email", href: "/dashboard/send", icon: Send },
   { name: "Templates", href: "/dashboard/templates", icon: FileText },
   { name: "Contacts", href: "/dashboard/contacts", icon: Users },

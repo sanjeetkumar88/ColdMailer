@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,11 +53,20 @@ export default function DashboardPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
   const token = (session?.user as any)?.accessToken
 
-  const fetchDashboardData = useCallback(async () => {
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const fetchDashboardData = useCallback(async (isSilent = false) => {
     if (status === 'unauthenticated') {
       setIsLoading(false)
       return
     }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    if (!isSilent) setIsLoading(true);
 
     try {
       const res = await axios.post(`/api/graphql-proxy`, {
@@ -140,22 +149,30 @@ export default function DashboardPage() {
         }))
         setRecentActivityData(mappedActivity)
       }
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error)
+    } catch (error: any) {
+      if (!axios.isCancel(error)) {
+        console.error("Failed to fetch dashboard data:", error)
+      }
     } finally {
-      setIsLoading(false)
+      if (!isSilent) setIsLoading(false)
     }
   }, [status])
 
   useEffect(() => {
     if (status === 'authenticated') {
-      setIsLoading(true)
       fetchDashboardData()
       
       const interval = setInterval(() => {
-        fetchDashboardData()
+        // Only fetch if the tab is visible to save browser resources
+        if (document.visibilityState === 'visible') {
+          fetchDashboardData(true) // silent fetch (no full loading skeleton)
+        }
       }, 30000)
-      return () => clearInterval(interval)
+      
+      return () => {
+        clearInterval(interval);
+        if (abortControllerRef.current) abortControllerRef.current.abort();
+      }
     } else if (status === 'unauthenticated') {
       setIsLoading(false)
     }
@@ -202,6 +219,120 @@ export default function DashboardPage() {
       }
     }
   }
+
+  // Memoize the recent activity list so it only re-renders when data actually changes
+  const renderedRecentActivity = useMemo(() => {
+    if (recentActivityData.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4 text-muted-foreground">
+            <Mail className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-medium">No activity yet</h3>
+          <p className="text-sm text-muted-foreground max-w-xs mt-1">
+            Start by creating a new campaign or template to see your outreach progress here.
+          </p>
+          <Link href="/dashboard/send">
+            <Button variant="outline" className="mt-6">
+              Launch your first campaign
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+    
+    return recentActivityData.map((activity) => {
+      const displayStatus = !activity.hasSender && (activity.status === 'processing' || activity.status === 'scheduled') ? 'failed' : activity.status;
+
+      return (
+        <div 
+          key={activity.id}
+          className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            displayStatus === "completed" 
+              ? "bg-primary/10" 
+              : displayStatus === "processing"
+                ? "bg-blue-500/10"
+                : displayStatus === "pending" || displayStatus === "scheduled"
+                  ? "bg-warning/10" 
+                  : "bg-destructive/10"
+          }`}>
+            {displayStatus === "completed" ? (
+              <CheckCircle2 className="w-5 h-5 text-primary" />
+            ) : displayStatus === "processing" ? (
+              <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />
+            ) : displayStatus === "pending" || displayStatus === "scheduled" ? (
+              <Clock className="w-5 h-5 text-warning" />
+            ) : (
+              <XCircle className="w-5 h-5 text-destructive" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm truncate">{activity.recipient}</span>
+              <Badge variant="secondary" className="text-xs shrink-0">
+                {activity.template}
+              </Badge>
+            </div>
+            <div className="text-sm text-muted-foreground truncate mt-0.5">
+              {activity.subject} {activity.status === 'processing' && `(${activity.progress.sent}/${activity.progress.total})`}
+              {!activity.hasSender && (
+                <span className="text-destructive text-[10px] ml-2 font-medium">
+                  (Sender disconnected)
+                </span>
+              )}
+              {activity.progress.failed > 0 && (
+                <span className="text-destructive text-[10px] ml-2 font-medium">
+                  ({activity.progress.failed} failed)
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground shrink-0 hidden sm:block">
+            {activity.time}
+          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0 cursor-pointer">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleAction('resend', activity)} className="cursor-pointer">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {activity.progress.failed > 0 ? "Retry Failed" : "Resend Now"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAction('followup', activity)} className="cursor-pointer">
+                <ArrowRightCircle className="w-4 h-4 mr-2" />
+                Follow-up
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAction('duplicate', activity)} className="cursor-pointer">
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href={`/dashboard/campaigns/${activity.id}`}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Details
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive cursor-pointer"
+                onClick={() => handleAction('delete', activity)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Record
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )
+    });
+  }, [recentActivityData]);
 
   if (status === 'loading') {
     return (
@@ -301,113 +432,8 @@ export default function DashboardPage() {
                   <Skeleton className="h-8 w-8 rounded-md" />
                 </div>
               ))
-            ) : recentActivityData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 text-center">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4 text-muted-foreground">
-                  <Mail className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-medium">No activity yet</h3>
-                <p className="text-sm text-muted-foreground max-w-xs mt-1">
-                  Start by creating a new campaign or template to see your outreach progress here.
-                </p>
-                <Link href="/dashboard/send">
-                  <Button variant="outline" className="mt-6">
-                    Launch your first campaign
-                  </Button>
-                </Link>
-              </div>
             ) : (
-              recentActivityData.map((activity) => {
-                const displayStatus = !activity.hasSender && (activity.status === 'processing' || activity.status === 'scheduled') ? 'failed' : activity.status;
-
-                return (
-                  <div 
-                    key={activity.id}
-                    className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      displayStatus === "completed" 
-                        ? "bg-primary/10" 
-                        : displayStatus === "processing"
-                          ? "bg-blue-500/10"
-                          : displayStatus === "pending" || displayStatus === "scheduled"
-                            ? "bg-warning/10" 
-                            : "bg-destructive/10"
-                    }`}>
-                      {displayStatus === "completed" ? (
-                        <CheckCircle2 className="w-5 h-5 text-primary" />
-                      ) : displayStatus === "processing" ? (
-                        <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />
-                      ) : displayStatus === "pending" || displayStatus === "scheduled" ? (
-                        <Clock className="w-5 h-5 text-warning" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-destructive" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{activity.recipient}</span>
-                        <Badge variant="secondary" className="text-xs shrink-0">
-                          {activity.template}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate mt-0.5">
-                        {activity.subject} {activity.status === 'processing' && `(${activity.progress.sent}/${activity.progress.total})`}
-                        {!activity.hasSender && (
-                          <span className="text-destructive text-[10px] ml-2 font-medium">
-                            (Sender disconnected)
-                          </span>
-                        )}
-                        {activity.progress.failed > 0 && (
-                          <span className="text-destructive text-[10px] ml-2 font-medium">
-                            ({activity.progress.failed} failed)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground shrink-0 hidden sm:block">
-                      {activity.time}
-                    </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="shrink-0">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => handleAction('resend', activity)}>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          {activity.progress.failed > 0 ? "Retry Failed" : "Resend Now"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAction('followup', activity)}>
-                          <ArrowRightCircle className="w-4 h-4 mr-2" />
-                          Follow-up
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAction('duplicate', activity)}>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/campaigns/${activity.id}`}>
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => handleAction('delete', activity)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete Record
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )
-              })
+              renderedRecentActivity
             )}
           </div>
         </CardContent>

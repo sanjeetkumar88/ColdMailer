@@ -10,6 +10,18 @@ import { EmailEvent } from '../events/events.enum';
 import { cacheService } from '../cache/cache.service';
 import { CacheKeys } from '../cache/keys';
 
+const luaRateLimitScript = `
+  local current = redis.call("INCR", KEYS[1])
+  if current == 1 then
+    redis.call("PEXPIREAT", KEYS[1], tonumber(ARGV[2]))
+  end
+  if current > tonumber(ARGV[1]) then
+    redis.call("DECR", KEYS[1])
+    return -1
+  end
+  return current
+`;
+
 export const emailWorker = new Worker(
   'email',
   async (job: Job) => {
@@ -23,6 +35,32 @@ export const emailWorker = new Worker(
     }
 
     if (!sender) throw new Error(`Sender ${senderId} not found`);
+
+    // --- RATE LIMITER LOGIC ---
+    const dailyLimit = sender.dailyLimit || 500;
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+    
+    // Key format: rate_limit:senderId:YYYY-MM-DD
+    const dateStr = now.toISOString().split('T')[0];
+    const rateLimitKey = `rate_limit:${senderId}:${dateStr}`;
+
+    const result = await ioredisClient.eval(
+      luaRateLimitScript,
+      1,
+      rateLimitKey,
+      dailyLimit,
+      midnight.getTime()
+    );
+
+    if (result === -1) {
+      console.log(`[EmailWorker] Rate limit exceeded for sender ${senderId}. Delaying job until midnight.`);
+      await job.moveToDelayed(Date.now() + msUntilMidnight);
+      return; // Stop processing and return cleanly (doesn't fail the job, just pauses it)
+    }
+    // --------------------------
 
     // Cache template
     let template = await cacheService.get<any>(CacheKeys.template(templateId));
@@ -109,8 +147,16 @@ export const emailWorker = new Worker(
   }
 );
 
-emailWorker.on('failed', (job, err) => {
+emailWorker.on('failed', async (job, err) => {
   if (job) {
+    // Check if job exhausted all attempts
+    if (job.attemptsMade >= (job.opts.attempts || 5)) {
+      console.log(`[EmailWorker] Job ${job.id} exhausted all attempts. Sending to DLQ.`);
+      await import('../queues/dlq.queue').then(({ dlqQueue }) => {
+        return dlqQueue.add('dead-email', { ...job.data, failureReason: err.message, failedAt: new Date() });
+      }).catch(e => console.error('Failed to push to DLQ:', e));
+    }
+
     emitter.emit(EmailEvent.FAILED, {
       campaignId: job.data.campaignId,
       recipientEmail: job.data.recipientEmail,

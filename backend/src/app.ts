@@ -10,6 +10,10 @@ import contactRoutes from './modules/contacts/contact.routes';
 import contactListRoutes from './modules/contacts/contact-list.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import mediaRoutes from './modules/media/media.routes';
+import adminRoutes from './modules/admin/admin.routes';
+
+import mongoose from 'mongoose';
+import { redisClient } from './cache/redis.client';
 
 import helmet from 'helmet';
 import { apiRateLimiter, authRateLimiter } from './shared/middleware/rate-limiter.middleware';
@@ -38,10 +42,29 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/contact-lists', contactListRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
-app.get('/health', (req: express.Request, res: express.Response) => {
-  res.status(200).json({ status: 'ok' });
+app.get('/health', async (req: express.Request, res: express.Response) => {
+  try {
+    const mongoState = mongoose.connection.readyState;
+    const redisStatus = redisClient.status;
+    
+    const isMongoHealthy = mongoState === 1; // 1 = connected
+    const isRedisHealthy = redisStatus === 'ready';
+
+    if (isMongoHealthy && isRedisHealthy) {
+      res.status(200).json({ status: 'ok', mongo: 'connected', redis: 'ready' });
+    } else {
+      res.status(503).json({ 
+        status: 'error', 
+        mongo: isMongoHealthy ? 'connected' : 'disconnected', 
+        redis: redisStatus 
+      });
+    }
+  } catch (error) {
+    res.status(503).json({ status: 'error', message: 'Health check failed' });
+  }
 });
 
 // 404 Handler

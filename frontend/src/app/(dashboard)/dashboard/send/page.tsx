@@ -69,6 +69,7 @@ function SendEmailForm() {
   const [attachments, setAttachments] = useState<File[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [isDrafting, setIsDrafting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [includeUnsubscribe, setIncludeUnsubscribe] = useState(true)
   const [loadedListId, setLoadedListId] = useState<string | null>(null)
@@ -214,10 +215,12 @@ function SendEmailForm() {
     setAttachments(attachments.filter((_, i) => i !== index))
   }
 
-  const handleSend = async () => {
+  const saveCampaign = async (launch: boolean) => {
     if (!selectedSender) return alert("Please select a sender account")
     
-    setIsSending(true)
+    if (launch) setIsSending(true)
+    else setIsDrafting(true)
+
     try {
       let attachmentUrls: string[] = []
       
@@ -240,7 +243,7 @@ function SendEmailForm() {
         ? `${body}\n\n---\nP.S. If you're not the right person for this, or don't want to hear from me again, just let me know.`
         : body
 
-      // 2. Create Campaign
+      // 2. Create Campaign (Initially as draft)
       const finalCampaignName = campaignName.trim() || `Campaign ${new Date().toLocaleString()}`
       const campaignRes = await axios.post(`/api/proxy/campaigns`, {
         name: finalCampaignName,
@@ -257,25 +260,38 @@ function SendEmailForm() {
       
       if (!campaignData.success) throw new Error(campaignData.message)
 
-      // 3. Launch Campaign
-      const launchRes = await axios.post(`/api/proxy/campaigns/${campaignData.data._id}/launch`)
-      const launchData = launchRes.data
+      // 3. Launch if requested
+      if (launch) {
+        const launchRes = await axios.post(`/api/proxy/campaigns/${campaignData.data._id}/launch`)
+        const launchData = launchRes.data
 
-      if (launchData.success) {
-        alert("Campaign launched successfully!")
-        // Reset form
-        setRecipients([])
-        setSubject("")
-        setBody("")
-        setAttachments([])
-        setSelectedTemplate(null)
+        if (launchData.success) {
+          alert("Campaign launched successfully!")
+        } else {
+           throw new Error(launchData.message || "Failed to launch campaign")
+        }
+      } else {
+        alert("Campaign saved as draft!")
       }
+
+      // Reset form and redirect
+      setRecipients([])
+      setSubject("")
+      setBody("")
+      setAttachments([])
+      setSelectedTemplate(null)
+      router.push("/dashboard/campaigns")
+      
     } catch (error: any) {
-      alert(`Failed to send: ${error.response?.data?.message || error.message}`)
+      alert(`Failed to ${launch ? 'send' : 'save draft'}: ${error.response?.data?.message || error.message}`)
     } finally {
-      setIsSending(false)
+      if (launch) setIsSending(false)
+      else setIsDrafting(false)
     }
   }
+
+  const handleSend = () => saveCampaign(true)
+  const handleDraft = () => saveCampaign(false)
 
   if (isLoading || status === 'loading') {
     return (
@@ -631,8 +647,16 @@ function SendEmailForm() {
               </DialogContent>
             </Dialog>
             <Button 
+              variant="outline"
+              onClick={handleDraft} 
+              disabled={isDrafting || isSending || !selectedSender || !subject}
+              className="px-6 py-6 rounded-xl font-medium text-lg hover:bg-muted/50"
+            >
+              {isDrafting ? "Saving..." : "Save as Draft"}
+            </Button>
+            <Button 
               onClick={handleSend} 
-              disabled={isSending || !selectedSender || recipients.length === 0 || !subject}
+              disabled={isSending || isDrafting || !selectedSender || recipients.length === 0 || !subject}
               className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 px-8 py-6 rounded-xl font-medium text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               {isSending ? "Sending..." : (
