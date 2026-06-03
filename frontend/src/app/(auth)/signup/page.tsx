@@ -35,7 +35,7 @@ export default function SignupPage() {
     const password = formData.get("password") as string
 
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, { name, email, password })
+      const res = await axios.post(`/api/proxy/auth/register`, { name, email, password })
       const data = res.data
 
       toast.success("Account created! Signing you in...")

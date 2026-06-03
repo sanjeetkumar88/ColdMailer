@@ -130,7 +130,7 @@ function SendEmailForm() {
   useEffect(() => {
     const fetchSourceCampaign = async (id: string, isFollowup: boolean) => {
       try {
-        const res = await axios.get(`${API_URL}/campaigns/${id}`)
+        const res = await axios.get(`/api/proxy/campaigns/${id}`)
         const result = res.data
         if (result.success) {
           const campaign = result.data
@@ -166,9 +166,7 @@ function SendEmailForm() {
 
   const loadContactList = async (listId: string) => {
     try {
-      const res = await axios.get(`${API_URL}/contacts?listId=${listId}`, {
-        headers: { Authorization: `Bearer ${(session?.user as any)?.accessToken}` }
-      });
+      const res = await axios.get(`/api/proxy/contacts?listId=${listId}`);
       if (res.data.success) {
         const emails = res.data.data.map((c: any) => c.email.toLowerCase());
         const uniqueNewEmails = emails.filter((email: string) => !recipients.includes(email));
@@ -229,7 +227,7 @@ function SendEmailForm() {
         const formData = new FormData()
         attachments.forEach(file => formData.append('files', file))
         
-        const uploadRes = await axios.post(`${API_URL}/media/upload`, formData)
+        const uploadRes = await axios.post(`/api/proxy/media/upload`, formData)
         const uploadData = uploadRes.data
         
         if (!uploadData.success) {

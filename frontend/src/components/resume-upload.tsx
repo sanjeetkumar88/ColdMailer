@@ -42,7 +42,7 @@ export function ResumeUpload({ onUploadSuccess }: { onUploadSuccess?: () => void
     formData.append("files", file)
 
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/media/upload`, formData)
+      const res = await axios.post(`/api/proxy/media/upload`, formData)
       
       if (!res.data.success) {
         throw new Error(res.data.message || "Upload failed")

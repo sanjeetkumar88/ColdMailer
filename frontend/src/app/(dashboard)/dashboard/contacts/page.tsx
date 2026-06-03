@@ -281,9 +281,7 @@ export default function ContactsPage() {
       // If there are new custom columns, update the list schema first
       if (newColumns.length > 0) {
         const uniqueColumns = Array.from(new Set([...selectedList.columns, ...newColumns]));
-        await axios.patch(`${API_URL}/contact-lists/${selectedList._id}`, { columns: uniqueColumns }, {
-          headers: { Authorization: `Bearer ${(session?.user as any)?.accessToken}` }
-        });
+        await axios.patch(`/api/proxy/contact-lists/${selectedList._id}`, { columns: uniqueColumns });
         
         // Update local state temporarily so the table refreshes correctly
         setSelectedList({ ...selectedList, columns: uniqueColumns });
@@ -291,10 +289,9 @@ export default function ContactsPage() {
 
       formData.append('mappingConfig', JSON.stringify(finalMapping));
 
-      const res = await axios.post(`${API_URL}/contacts/bulk-upload`, formData, {
+      const res = await axios.post(`/api/proxy/contacts/bulk-upload`, formData, {
         headers: { 
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${(session?.user as any)?.accessToken}`
+          'Content-Type': 'multipart/form-data'
         }
       });
       
