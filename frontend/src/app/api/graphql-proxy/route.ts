@@ -1,4 +1,4 @@
-// Force Vercel deployment trigger
+// Force Vercel deployment trigger (testing new webhook)
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
