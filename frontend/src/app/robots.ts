@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard/', '/onboarding/'],
+      disallow: ['/dashboard/', '/onboarding/', '/api/'],
     },
     sitemap: 'https://coldmailer.me/sitemap.xml',
   }

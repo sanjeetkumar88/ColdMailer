@@ -1,19 +1,15 @@
 "use client"
 
 import Link from "next/link"
-import { useSession } from "next-auth/react"
-import { Mail } from "lucide-react"
+import { Zap } from "lucide-react"
 
-export function NavBarLogo({ className, iconClassName, textClassName }: { className?: string, iconClassName?: string, textClassName?: string }) {
-  const { status } = useSession()
-  const href = status === "authenticated" ? "/dashboard" : "/"
-  
+export function NavbarLogo({ className, iconClassName }: { className?: string, iconClassName?: string }) {
   return (
-    <Link href={href} className={className || "flex items-center gap-3"}>
-      <div className={iconClassName || "bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-100 animate-float"}>
-        <Mail className="h-5 w-5 text-white" />
+    <div className={className || "flex items-center gap-2 group transition-all"}>
+      <div className={iconClassName || "relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-all duration-300"}>
+        <Zap className="w-4 h-4 text-white" />
+        <div className="absolute inset-0 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-      <span className={textClassName || "text-2xl font-bold tracking-tighter"}>ColdMailer</span>
-    </Link>
+    </div>
   )
 }
