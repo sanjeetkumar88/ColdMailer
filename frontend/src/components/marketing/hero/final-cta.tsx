@@ -30,7 +30,7 @@ export function FinalCTA() {
           transition={{ delay: 0.1 }}
           className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
         >
-          Join thousands of modern revenue teams who rely on Antigravity to close more deals.
+          Join thousands of modern revenue teams who rely on ColdMailer to close more deals.
         </motion.p>
         
         <motion.div
@@ -54,3 +54,4 @@ export function FinalCTA() {
     </section>
   );
 }
+

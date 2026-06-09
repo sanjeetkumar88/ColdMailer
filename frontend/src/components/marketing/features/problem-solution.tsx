@@ -10,7 +10,7 @@ export function ProblemSolution() {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">The old way is broken</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Traditional cold email tools limit your growth, burn your domains, and waste your time. We built Antigravity to fix this.
+            Traditional cold email tools limit your growth, burn your domains, and waste your time. We built ColdMailer to fix this.
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export function ProblemSolution() {
               <div className="p-2 rounded-full bg-success/20 text-success">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-semibold">The Antigravity Way</h3>
+              <h3 className="text-xl font-semibold">The ColdMailer Way</h3>
             </div>
             <ul className="space-y-4 relative z-10">
               {[
@@ -81,3 +81,4 @@ export function ProblemSolution() {
     </section>
   );
 }
+

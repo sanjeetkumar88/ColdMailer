@@ -3,7 +3,7 @@ import { AICapabilities } from "@/components/marketing/features/ai-capabilities"
 import { FinalCTA } from "@/components/marketing/hero/final-cta";
 
 export const metadata = {
-  title: "Features | Antigravity",
+  title: "Features | ColdMailer",
   description: "Explore the comprehensive suite of tools designed specifically for high-volume, personalized cold outreach.",
 };
 
@@ -29,3 +29,4 @@ export default function FeaturesPage() {
     </div>
   );
 }
+

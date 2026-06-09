@@ -12,7 +12,7 @@ export function SiteFooter() {
           <div className="col-span-2 lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <NavbarLogo />
-              <span className="font-bold text-xl tracking-tight">Antigravity</span>
+              <span className="font-bold text-xl tracking-tight">ColdMailer</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs mb-6">
               Scale personalized outreach without sacrificing deliverability. Send smarter campaigns, reach more prospects, and land more meetings.
@@ -68,7 +68,7 @@ export function SiteFooter() {
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} Antigravity. All rights reserved.
+            © {currentYear} ColdMailer. All rights reserved.
           </p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="w-2 h-2 rounded-full bg-success"></span>
@@ -79,3 +79,4 @@ export function SiteFooter() {
     </footer>
   );
 }
+

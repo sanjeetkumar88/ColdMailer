@@ -168,11 +168,12 @@ export default function CampaignDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/campaigns">
-            <Button variant="outline" size="icon" className="rounded-full">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-          </Link>
+          <Button asChild variant="ghost" className="mb-6 -ml-4 hover:bg-transparent text-muted-foreground hover:text-foreground">
+            <Link href="/dashboard/campaigns">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Campaigns
+            </Link>
+          </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{campaign.name}</h1>
             <div className="flex items-center gap-2 mt-1">

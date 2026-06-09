@@ -21,7 +21,7 @@ export function AICapabilities() {
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20"
             >
               <Sparkles className="h-4 w-4" />
-              <span>Antigravity AI</span>
+              <span>ColdMailer AI</span>
             </motion.div>
             
             <motion.h2
@@ -129,3 +129,4 @@ export function AICapabilities() {
     </section>
   );
 }
+

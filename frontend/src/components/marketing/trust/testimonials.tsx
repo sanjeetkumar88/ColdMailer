@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 const testimonials = [
   {
-    quote: "Antigravity completely transformed our outbound motion. We went from booking 5 meetings a month to 45, without scaling our SDR team.",
+    quote: "ColdMailer completely transformed our outbound motion. We went from booking 5 meetings a month to 45, without scaling our SDR team.",
     author: "Sarah Jenkins",
     role: "VP Sales at HyperGrowth",
     avatar: "S"
@@ -30,7 +30,7 @@ export function Testimonials() {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Loved by revenue leaders</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Don't just take our word for it. See what top teams are saying about Antigravity.
+            Don't just take our word for it. See what top teams are saying about ColdMailer.
           </p>
         </div>
 
@@ -71,3 +71,4 @@ export function Testimonials() {
     </section>
   );
 }
+

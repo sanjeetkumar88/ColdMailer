@@ -16,42 +16,82 @@ export function PricingPreview() {
           </p>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-md mx-auto p-8 rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
-          
-          <div className="relative z-10">
-            <h3 className="text-2xl font-semibold mb-2">Growth Plan</h3>
-            <div className="flex items-baseline gap-2 mb-6">
-              <span className="text-5xl font-bold">$97</span>
-              <span className="text-muted-foreground">/month</span>
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Starter Plan */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="p-8 rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl relative overflow-hidden"
+          >
+            <div className="relative z-10">
+              <h3 className="text-2xl font-semibold mb-2">Starter</h3>
+              <div className="flex items-baseline gap-2 mb-6">
+                <span className="text-5xl font-bold">$37</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+              
+              <AnimatedButton asChild variant="outline" size="lg" className="w-full mb-8">
+                <Link href="/signup">Start Free Trial</Link>
+              </AnimatedButton>
+              
+              <div className="space-y-4">
+                {[
+                  "Unlimited email accounts",
+                  "Unlimited warmup",
+                  "5,000 emails/month",
+                  "1,000 AI personalization credits",
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                    <span className="text-sm text-muted-foreground">{feature}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            
-            <AnimatedButton asChild size="lg" className="w-full mb-8">
-              <Link href="/signup">Start 14-Day Free Trial</Link>
-            </AnimatedButton>
-            
-            <div className="space-y-4">
-              {[
-                "Unlimited email sending accounts",
-                "Unlimited email warmup",
-                "25,000 active leads/month",
-                "AI personalization credits included",
-                "A/B testing & analytics",
-                "API access & webhooks"
-              ].map((feature, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                  <span className="text-sm text-foreground">{feature}</span>
-                </div>
-              ))}
+          </motion.div>
+
+          {/* Growth Plan */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="p-8 rounded-3xl border border-primary/30 bg-primary/5 backdrop-blur-xl relative overflow-hidden shadow-[0_0_40px_rgba(139,92,246,0.1)]"
+          >
+            <div className="absolute top-0 right-0 px-4 py-1 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-bl-xl">
+              Most Popular
             </div>
-          </div>
-        </motion.div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
+            
+            <div className="relative z-10">
+              <h3 className="text-2xl font-semibold mb-2">Growth</h3>
+              <div className="flex items-baseline gap-2 mb-6">
+                <span className="text-5xl font-bold">$97</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+              
+              <AnimatedButton asChild size="lg" className="w-full mb-8">
+                <Link href="/signup">Start Free Trial</Link>
+              </AnimatedButton>
+              
+              <div className="space-y-4">
+                {[
+                  "Unlimited email accounts",
+                  "Unlimited warmup",
+                  "100,000 emails/month",
+                  "10,000 AI personalization credits",
+                  "Advanced API access"
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

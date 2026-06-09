@@ -1,7 +1,7 @@
 import { GradientText } from "@/components/ui/gradient-text";
 
 export const metadata = {
-  title: "About Us | Antigravity",
+  title: "About Us | ColdMailer",
   description: "Learn about the team building the future of outbound sales.",
 };
 
@@ -14,7 +14,7 @@ export default function AboutPage() {
           <span className="text-gradient-primary">for founders.</span>
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          We built Antigravity because we were tired of tools that overpromised and underdelivered on cold outreach.
+          We built ColdMailer because we were tired of tools that overpromised and underdelivered on cold outreach.
         </p>
       </section>
 
@@ -44,3 +44,4 @@ export default function AboutPage() {
     </div>
   );
 }
+

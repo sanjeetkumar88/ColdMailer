@@ -319,12 +319,12 @@ export default function CampaignsPage() {
             Manage your email sequences, track engagement, and launch new outreach efforts all in one place.
           </p>
         </div>
-        <Link href="/dashboard/send">
-          <Button className="shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30 active:scale-95 rounded-xl">
+        <Button asChild className="shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30 active:scale-95 rounded-xl">
+          <Link href="/dashboard/send">
             <Sparkles className="w-4 h-4 mr-2" />
             New Campaign
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Modern Filter Bar */}
@@ -385,11 +385,11 @@ export default function CampaignsPage() {
             <p className="text-muted-foreground max-w-sm mb-6">
               Get started by creating your first email campaign. It takes just a few clicks to set up.
             </p>
-            <Link href="/dashboard/send">
-              <Button variant="outline" className="rounded-xl h-11 px-8">
+            <Button asChild variant="outline" className="rounded-xl h-11 px-8">
+              <Link href="/dashboard/send">
                 Create Campaign
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         ) : (
           {renderedCampaigns}

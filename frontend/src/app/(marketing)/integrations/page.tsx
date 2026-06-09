@@ -9,9 +9,9 @@ const integrations = [
   { name: "Salesforce", category: "CRM", description: "Bi-directional sync for leads, contacts, and activity logging." },
   { name: "HubSpot", category: "CRM", description: "Automatically push positive replies and update deal stages." },
   { name: "Slack", category: "Communication", description: "Get real-time alerts for new replies and campaign milestones." },
-  { name: "Zapier", category: "Workflow", description: "Connect Antigravity to 5,000+ other apps without writing code." },
+  { name: "Zapier", category: "Workflow", description: "Connect ColdMailer to 5,000+ other apps without writing code." },
   { name: "Webhooks", category: "Developer Tools", description: "Real-time event streaming for custom integrations." },
-  { name: "REST API", category: "Developer Tools", description: "Full programmatic access to your Antigravity workspace." },
+  { name: "REST API", category: "Developer Tools", description: "Full programmatic access to your ColdMailer workspace." },
 ];
 
 export default function IntegrationsPage() {
@@ -22,7 +22,7 @@ export default function IntegrationsPage() {
           Plays nice with your stack
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Connect Antigravity to your existing tools to automate workflows and keep your data perfectly synced.
+          Connect ColdMailer to your existing tools to automate workflows and keep your data perfectly synced.
         </p>
       </section>
 
@@ -51,3 +51,4 @@ export default function IntegrationsPage() {
     </div>
   );
 }
+

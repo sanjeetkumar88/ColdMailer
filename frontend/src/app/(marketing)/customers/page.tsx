@@ -13,7 +13,7 @@ const caseStudies = [
       { label: "Reply Rate", value: "14.2%" },
       { label: "Meetings Booked", value: "45/mo" }
     ],
-    description: "Learn how a seed-stage startup used Antigravity's AI personalization to break through the noise and book meetings with Fortune 500 VP's."
+    description: "Learn how a seed-stage startup used ColdMailer's AI personalization to break through the noise and book meetings with Fortune 500 VP's."
   },
   {
     type: "Agency",
@@ -23,7 +23,7 @@ const caseStudies = [
       { label: "Time Saved", value: "20hrs/wk" },
       { label: "Client Retention", value: "98%" }
     ],
-    description: "ScalePartners eliminated their mess of 15 different tools and unified their entire lead gen agency operation on Antigravity."
+    description: "ScalePartners eliminated their mess of 15 different tools and unified their entire lead gen agency operation on ColdMailer."
   },
   {
     type: "Enterprise",
@@ -43,7 +43,7 @@ const caseStudies = [
       { label: "Candidate Response", value: "28%" },
       { label: "Placements", value: "3x" }
     ],
-    description: "Using Antigravity's LinkedIn scraping and AI personalization to source and recruit highly competitive engineering talent."
+    description: "Using ColdMailer's LinkedIn scraping and AI personalization to source and recruit highly competitive engineering talent."
   }
 ];
 
@@ -55,7 +55,7 @@ export default function CustomersPage() {
           Customer Stories
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          See how innovative teams across every industry are using Antigravity to scale their revenue.
+          See how innovative teams across every industry are using ColdMailer to scale their revenue.
         </p>
       </section>
 
@@ -106,3 +106,4 @@ export default function CustomersPage() {
     </div>
   );
 }
+

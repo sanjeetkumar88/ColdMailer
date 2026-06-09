@@ -232,11 +232,11 @@ export default function DashboardPage() {
           <p className="text-sm text-muted-foreground max-w-xs mt-1">
             Start by creating a new campaign or template to see your outreach progress here.
           </p>
-          <Link href="/dashboard/send">
-            <Button variant="outline" className="mt-6">
+          <Button asChild variant="outline" className="mt-6">
+            <Link href="/dashboard/send">
               Launch your first campaign
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       );
     }
@@ -358,12 +358,12 @@ export default function DashboardPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Link href="/dashboard/send">
-            <Button size="sm">
+          <Button asChild size="sm">
+            <Link href="/dashboard/send">
               <Send className="w-4 h-4 mr-2" />
               New Campaign
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -412,11 +412,11 @@ export default function DashboardPage() {
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>Real-time status of your email campaigns</CardDescription>
             </div>
-            <Link href="/dashboard/campaigns">
-              <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/5">
+            <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/5">
+              <Link href="/dashboard/campaigns">
                 View all
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
