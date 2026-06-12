@@ -5,14 +5,18 @@ import { Zap } from "lucide-react"
 
 export function NavbarLogo({ className, iconClassName }: { className?: string, iconClassName?: string }) {
   return (
-    <div className={className || "flex items-center gap-2 group transition-all"}>
-      <div className={iconClassName || "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300"}>
+    <div className={className || "flex items-center group transition-all"}>
+      <div className={iconClassName || "relative flex items-center w-36 h-10 transition-all duration-300"}>
         <img 
           src="/logo.png" 
           alt="ColdMailer Logo" 
-          className="w-full h-full object-contain rounded-lg"
+          className="w-full h-full object-contain object-left dark:hidden"
         />
-        <div className="absolute inset-0 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <img 
+          src="/logo-dark.png" 
+          alt="ColdMailer Logo Dark Mode" 
+          className="w-full h-full object-contain object-left hidden dark:block"
+        />
       </div>
     </div>
   )

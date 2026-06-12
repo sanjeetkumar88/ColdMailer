@@ -44,7 +44,6 @@ export function SiteHeader() {
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center gap-2">
               <NavbarLogo />
-              <span className="font-bold text-xl tracking-tight hidden sm:block">ColdMailer</span>
             </Link>
           </div>
 

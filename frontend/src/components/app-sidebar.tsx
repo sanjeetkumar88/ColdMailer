@@ -63,20 +63,21 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
 
       {/* Logo */}
       <div className={cn("px-4 py-6 flex items-center transition-all duration-300", isCollapsed ? "justify-center" : "px-6")}>
-        <Link href="/dashboard" className="flex items-center gap-3 group transition-all">
-          <div className="relative flex items-center justify-center w-10 h-10 shrink-0 rounded-xl transition-all duration-300 group-hover:scale-105">
+        <Link href="/dashboard" className="flex items-center gap-3 group transition-all w-full">
+          <div className={cn("relative flex items-center transition-all duration-300 group-hover:scale-105", isCollapsed ? "w-10 h-10 justify-center" : "h-10 w-36")}>
             <img 
               src="/logo.png" 
               alt="ColdMailer Logo" 
-              className="w-full h-full object-contain rounded-xl"
+              className={cn("w-full h-full dark:hidden", isCollapsed ? "object-cover object-left" : "object-contain object-left")}
             />
-            <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <img 
+              src="/logo-dark.png" 
+              alt="ColdMailer Logo Dark Mode" 
+              className={cn("w-full h-full hidden dark:block", isCollapsed ? "object-cover object-left" : "object-contain object-left")}
+            />
           </div>
           {!isCollapsed && (
-            <div className="flex flex-col overflow-hidden whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 tracking-tight">
-                ColdMailer
-              </span>
+            <div className="flex flex-col overflow-hidden whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300 ml-auto">
               <span className="text-[10px] font-medium text-primary tracking-widest uppercase opacity-80 flex items-center gap-1">
                 Workspace <Sparkles className="w-3 h-3" />
               </span>

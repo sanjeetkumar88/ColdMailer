@@ -12,7 +12,6 @@ export function SiteFooter() {
           <div className="col-span-2 lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <NavbarLogo />
-              <span className="font-bold text-xl tracking-tight">ColdMailer</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs mb-6">
               Scale personalized outreach without sacrificing deliverability. Send smarter campaigns, reach more prospects, and land more meetings.
