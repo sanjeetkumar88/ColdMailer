@@ -20,13 +20,19 @@ const runScheduler = async () => {
     const dueSenders = await Sender.find({
       isActive: true,
       provider: 'gmail',
-      $or: [
-        { nextSyncAt: { $lte: now } },
-        { nextSyncAt: { $exists: false } }
-      ],
-      $or: [
-        { 'syncState.isSyncing': false },
-        { 'syncState.isSyncing': { $exists: false } }
+      $and: [
+        {
+          $or: [
+            { nextSyncAt: { $lte: now } },
+            { nextSyncAt: { $exists: false } }
+          ]
+        },
+        {
+          $or: [
+            { 'syncState.isSyncing': false },
+            { 'syncState.isSyncing': { $exists: false } }
+          ]
+        }
       ]
     });
 
