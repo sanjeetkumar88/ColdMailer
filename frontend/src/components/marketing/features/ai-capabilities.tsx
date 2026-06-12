@@ -90,8 +90,8 @@ export function AICapabilities() {
             className="relative"
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 rounded-2xl blur-xl" />
-            <div className="relative rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+            <div className="relative rounded-2xl border border-slate-800 dark:border-white/10 bg-slate-950 dark:bg-black/40 backdrop-blur-xl p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-800 dark:border-white/10 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary p-[1px]">
                     <div className="w-full h-full bg-black rounded-full flex items-center justify-center">
@@ -99,17 +99,17 @@ export function AICapabilities() {
                     </div>
                   </div>
                   <div>
-                    <div className="font-medium text-sm">AI Agent</div>
-                    <div className="text-xs text-muted-foreground">Generating personalization...</div>
+                    <div className="font-medium text-sm text-white">AI Agent</div>
+                    <div className="text-xs text-slate-400">Generating personalization...</div>
                   </div>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <div className="p-3 rounded-lg bg-white/5 border border-white/5 text-sm font-mono text-muted-foreground">
+                <div className="p-3 rounded-lg bg-slate-900 dark:bg-white/5 border border-slate-800 dark:border-white/5 text-sm font-mono text-slate-300">
                   <span className="text-secondary">&gt;</span> Analyzing profile: Sarah Jenkins (VP Sales at Acme Corp)
                 </div>
-                <div className="p-3 rounded-lg bg-white/5 border border-white/5 text-sm font-mono text-muted-foreground">
+                <div className="p-3 rounded-lg bg-slate-900 dark:bg-white/5 border border-slate-800 dark:border-white/5 text-sm font-mono text-slate-300">
                   <span className="text-secondary">&gt;</span> Found recent post: "Scaling sales teams in Q3"
                 </div>
                 <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">

@@ -20,10 +20,10 @@ export function AnimatedDemo() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="relative rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden"
+          className="relative rounded-2xl border border-slate-800 dark:border-white/10 bg-slate-950 dark:bg-black/40 backdrop-blur-xl shadow-2xl overflow-hidden"
         >
           {/* Mac window controls */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800 dark:border-white/10 bg-slate-900 dark:bg-white/5">
             <div className="w-3 h-3 rounded-full bg-destructive" />
             <div className="w-3 h-3 rounded-full bg-warning" />
             <div className="w-3 h-3 rounded-full bg-success" />
@@ -31,20 +31,20 @@ export function AnimatedDemo() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 min-h-[500px]">
             {/* Sidebar Mockup */}
-            <div className="hidden md:block border-r border-white/10 bg-white/[0.02] p-4 space-y-4">
+            <div className="hidden md:block border-r border-slate-800 dark:border-white/10 bg-slate-900/50 dark:bg-white/[0.02] p-4 space-y-4">
               <div className="flex items-center gap-3 px-3 py-2 text-primary bg-primary/10 rounded-md">
                 <Inbox className="w-5 h-5" />
                 <span className="font-medium text-sm">Unified Inbox</span>
               </div>
-              <div className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-white transition-colors">
+              <div className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white transition-colors">
                 <Mail className="w-5 h-5" />
                 <span className="font-medium text-sm">Campaigns</span>
               </div>
-              <div className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-white transition-colors">
+              <div className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white transition-colors">
                 <Users className="w-5 h-5" />
                 <span className="font-medium text-sm">Leads</span>
               </div>
-              <div className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-white transition-colors">
+              <div className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white transition-colors">
                 <BarChart3 className="w-5 h-5" />
                 <span className="font-medium text-sm">Analytics</span>
               </div>
@@ -56,7 +56,7 @@ export function AnimatedDemo() {
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
               
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-semibold">Campaign Overview</h3>
+                <h3 className="text-xl font-semibold text-white">Campaign Overview</h3>
                 <div className="px-3 py-1 rounded-full bg-success/20 text-success text-xs font-medium border border-success/30">
                   Active
                 </div>
@@ -76,9 +76,9 @@ export function AnimatedDemo() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.3 + i * 0.1 }}
-                    className="p-4 rounded-xl border border-white/5 bg-white/[0.02]"
+                    className="p-4 rounded-xl border border-slate-800 dark:border-white/5 bg-slate-900/50 dark:bg-white/[0.02]"
                   >
-                    <div className="text-sm text-muted-foreground mb-1">{stat.label}</div>
+                    <div className="text-sm text-slate-400 mb-1">{stat.label}</div>
                     <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
                     <div className="text-xs text-success">{stat.trend} this week</div>
                   </motion.div>
@@ -94,16 +94,16 @@ export function AnimatedDemo() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.6 + i * 0.1 }}
-                    className="flex items-center gap-4 p-3 rounded-lg border border-white/5 bg-white/[0.01]"
+                    className="flex items-center gap-4 p-3 rounded-lg border border-slate-800 dark:border-white/5 bg-slate-900/30 dark:bg-white/[0.01]"
                   >
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                       <Mail className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <div className="h-4 w-1/3 bg-white/10 rounded mb-2"></div>
-                      <div className="h-3 w-1/2 bg-white/5 rounded"></div>
+                      <div className="h-4 w-1/3 bg-slate-700 dark:bg-white/10 rounded mb-2"></div>
+                      <div className="h-3 w-1/2 bg-slate-800 dark:bg-white/5 rounded"></div>
                     </div>
-                    <div className="h-4 w-12 bg-white/10 rounded"></div>
+                    <div className="h-4 w-12 bg-slate-700 dark:bg-white/10 rounded"></div>
                   </motion.div>
                 ))}
               </div>
