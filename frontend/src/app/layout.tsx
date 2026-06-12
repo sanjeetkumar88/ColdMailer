@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://coldmailer.me',
   },
+  icons: {
+    icon: '/favicon.png',
+  },
   authors: [{ name: "ColdMailer Team" }],
   creator: "ColdMailer",
   openGraph: {

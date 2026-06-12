@@ -8,7 +8,7 @@ export function NavbarLogo({ className, iconClassName }: { className?: string, i
     <div className={className || "flex items-center gap-2 group transition-all"}>
       <div className={iconClassName || "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300"}>
         <img 
-          src="https://res.cloudinary.com/dthif7dtz/image/upload/v1781244615/Gemini_Generated_Image_xyojkqxyojkqxyoj_nlxgxo.png" 
+          src="/logo.png" 
           alt="ColdMailer Logo" 
           className="w-full h-full object-contain rounded-lg"
         />

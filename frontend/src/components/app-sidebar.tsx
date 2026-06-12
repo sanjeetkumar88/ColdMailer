@@ -66,7 +66,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
         <Link href="/dashboard" className="flex items-center gap-3 group transition-all">
           <div className="relative flex items-center justify-center w-10 h-10 shrink-0 rounded-xl transition-all duration-300 group-hover:scale-105">
             <img 
-              src="https://res.cloudinary.com/dthif7dtz/image/upload/v1781244615/Gemini_Generated_Image_xyojkqxyojkqxyoj_nlxgxo.png" 
+              src="/logo.png" 
               alt="ColdMailer Logo" 
               className="w-full h-full object-contain rounded-xl"
             />
