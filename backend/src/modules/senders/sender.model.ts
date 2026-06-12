@@ -20,6 +20,19 @@ export interface ISender extends Document {
     region?: string | null;
     expiryDate?: number | null;
   };
+  healthStatus?: {
+    spf: boolean;
+    dmarc: boolean;
+    dkim: { status: 'unknown' | 'verified' | 'failed', source?: 'dns' | 'outbound-validation' };
+    score: number;
+  };
+  syncState?: {
+    historyId?: string;
+    isSyncing: boolean;
+    lockUntil?: Date;
+    status: 'pending' | 'syncing' | 'active' | 'failed';
+  };
+  nextSyncAt?: Date;
   userId: Types.ObjectId;
   isActive: boolean;
   createdAt: Date;
@@ -43,6 +56,22 @@ const senderSchema = new Schema<ISender>(
     },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     isActive: { type: Boolean, default: true },
+    healthStatus: {
+      spf: { type: Boolean, default: false },
+      dmarc: { type: Boolean, default: false },
+      dkim: {
+        status: { type: String, enum: ['unknown', 'verified', 'failed'], default: 'unknown' },
+        source: { type: String, enum: ['dns', 'outbound-validation'] }
+      },
+      score: { type: Number, default: 0 }
+    },
+    syncState: {
+      historyId: { type: String },
+      isSyncing: { type: Boolean, default: false },
+      lockUntil: { type: Date },
+      status: { type: String, enum: ['pending', 'syncing', 'active', 'failed'], default: 'pending' }
+    },
+    nextSyncAt: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );

@@ -293,7 +293,7 @@ function SendEmailForm() {
 
   if (isLoading || status === 'loading') {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-500">
+      <div className="space-y-6 w-full mx-auto animate-in fade-in duration-500">
         <div>
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-96" />
@@ -335,7 +335,7 @@ function SendEmailForm() {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 w-full mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent blur-3xl -z-10 rounded-full" />

@@ -49,7 +49,7 @@ export function SiteHeader() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -64,7 +64,7 @@ export function SiteHeader() {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-4">
             <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
               Log in
             </Link>
@@ -74,7 +74,7 @@ export function SiteHeader() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <button
               type="button"
               className="text-muted-foreground hover:text-white"
@@ -98,7 +98,7 @@ export function SiteHeader() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-background/95 backdrop-blur-xl border-b border-white/10"
+            className="lg:hidden bg-background/95 backdrop-blur-xl border-b border-white/10"
           >
             <div className="px-4 pt-2 pb-6 space-y-1">
               {navLinks.map((link) => (

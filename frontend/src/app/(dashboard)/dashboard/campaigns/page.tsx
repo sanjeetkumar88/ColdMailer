@@ -305,7 +305,7 @@ export default function CampaignsPage() {
   }, [filteredCampaigns]); // Only re-render cards when filtered campaigns change, not on other state updates
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-8">
+    <div className="space-y-8 w-full mx-auto pb-8">
       {/* Premium Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/10">
         <div>
@@ -392,7 +392,7 @@ export default function CampaignsPage() {
             </Button>
           </div>
         ) : (
-          {renderedCampaigns}
+          renderedCampaigns
         )}
       </div>
 

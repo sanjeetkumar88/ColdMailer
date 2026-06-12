@@ -183,7 +183,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8 w-full mx-auto pb-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
@@ -210,7 +210,25 @@ export default function SettingsPage() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4 pt-4">
-          {senders.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border animate-pulse">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-muted" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-48 bg-muted rounded" />
+                      <div className="h-3 w-32 bg-muted rounded" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-24 bg-muted rounded" />
+                    <div className="h-8 w-8 bg-muted rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : senders.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center rounded-xl bg-muted/30 border border-dashed">
               <Mail className="w-8 h-8 text-muted-foreground mb-3" />
               <div className="font-medium">No accounts connected</div>
@@ -305,43 +323,48 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={mounted ? theme : "system"} onValueChange={(v) => setTheme(v)}>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Label 
-                htmlFor="light"
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                  theme === "light" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                }`}
-              >
-                <RadioGroupItem value="light" id="light" className="sr-only" />
-                <Sun className="w-5 h-5" />
-                <span className="font-medium">Light</span>
-                {theme === "light" && <Check className="w-4 h-4 text-primary ml-auto" />}
-              </Label>
-              <Label 
-                htmlFor="dark"
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                  theme === "dark" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                }`}
-              >
-                <RadioGroupItem value="dark" id="dark" className="sr-only" />
-                <Moon className="w-5 h-5" />
-                <span className="font-medium">Dark</span>
-                {theme === "dark" && <Check className="w-4 h-4 text-primary ml-auto" />}
-              </Label>
-              <Label 
-                htmlFor="system"
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                  theme === "system" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                }`}
-              >
-                <RadioGroupItem value="system" id="system" className="sr-only" />
-                <Laptop className="w-5 h-5" />
-                <span className="font-medium">System</span>
-                {theme === "system" && <Check className="w-4 h-4 text-primary ml-auto" />}
-              </Label>
-            </div>
-          </RadioGroup>
+          {(() => {
+            const currentTheme = mounted ? theme : "system";
+            return (
+              <RadioGroup value={currentTheme} onValueChange={(v) => setTheme(v)}>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Label 
+                    htmlFor="light"
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                      currentTheme === "light" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                    }`}
+                  >
+                    <RadioGroupItem value="light" id="light" className="sr-only" />
+                    <Sun className="w-5 h-5" />
+                    <span className="font-medium">Light</span>
+                    {currentTheme === "light" && <Check className="w-4 h-4 text-primary ml-auto" />}
+                  </Label>
+                  <Label 
+                    htmlFor="dark"
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                      currentTheme === "dark" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                    }`}
+                  >
+                    <RadioGroupItem value="dark" id="dark" className="sr-only" />
+                    <Moon className="w-5 h-5" />
+                    <span className="font-medium">Dark</span>
+                    {currentTheme === "dark" && <Check className="w-4 h-4 text-primary ml-auto" />}
+                  </Label>
+                  <Label 
+                    htmlFor="system"
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                      currentTheme === "system" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                    }`}
+                  >
+                    <RadioGroupItem value="system" id="system" className="sr-only" />
+                    <Laptop className="w-5 h-5" />
+                    <span className="font-medium">System</span>
+                    {currentTheme === "system" && <Check className="w-4 h-4 text-primary ml-auto" />}
+                  </Label>
+                </div>
+              </RadioGroup>
+            );
+          })()}
         </CardContent>
       </Card>
 

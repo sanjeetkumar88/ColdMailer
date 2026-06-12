@@ -13,7 +13,9 @@ import {
   Menu,
   X,
   Send,
-  LogOut
+  LogOut,
+  Megaphone,
+  Inbox
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -22,6 +24,8 @@ import { signOut } from "next-auth/react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone },
+  { name: "Inbox", href: "/dashboard/inbox", icon: Inbox },
   { name: "Send Email", href: "/dashboard/send", icon: Send },
   { name: "Templates", href: "/dashboard/templates", icon: FileText },
   { name: "Contacts", href: "/dashboard/contacts", icon: Users },

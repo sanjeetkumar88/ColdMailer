@@ -2,17 +2,21 @@
 
 import * as React from "react";
 import { motion, HTMLMotionProps } from "framer-motion";
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
+
+const MotionSlot = motion(Slot);
 
 interface AnimatedButtonProps extends HTMLMotionProps<"button"> {
   variant?: "primary" | "secondary" | "outline" | "ghost";
   size?: "sm" | "md" | "lg";
   children: React.ReactNode;
   className?: string;
+  asChild?: boolean;
 }
 
 export const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
-  ({ variant = "primary", size = "md", children, className, ...props }, ref) => {
+  ({ variant = "primary", size = "md", asChild = false, children, className, ...props }, ref) => {
     
     const baseStyles = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
     
@@ -29,8 +33,10 @@ export const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButton
       lg: "h-11 px-8 text-base",
     };
 
+    const Comp = asChild ? MotionSlot : motion.button;
+
     return (
-      <motion.button
+      <Comp
         ref={ref}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
@@ -38,7 +44,7 @@ export const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButton
         {...props}
       >
         {children}
-      </motion.button>
+      </Comp>
     );
   }
 );

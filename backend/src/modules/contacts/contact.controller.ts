@@ -4,9 +4,39 @@ import { asyncHandler } from '../../shared/utils/asyncHandler';
 import fs from 'fs';
 import csv from 'csv-parser';
 import { Contact } from './contact.model';
+import dns from 'dns/promises';
+import validator from 'validator';
+
+async function hasMX(domain: string): Promise<boolean> {
+  try {
+    const records = await dns.resolveMx(domain);
+    return records && records.length > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function validateEmailAndMX(email: string): Promise<boolean> {
+  if (!validator.isEmail(email)) return false;
+  const domain = email.split('@')[1];
+  if (!domain) return false;
+  return await hasMX(domain);
+}
 export const createContact = asyncHandler(async (req: any, res: Response) => {
   const { email, name, tags, isActive, listId, ...metadata } = req.body;
   
+  if (!email || !validator.isEmail(email)) {
+    res.status(400);
+    throw new Error('Invalid email format');
+  }
+
+  const domain = email.split('@')[1];
+  const hasValidMX = await hasMX(domain);
+  if (!hasValidMX) {
+    res.status(400);
+    throw new Error('Invalid email domain (no MX records found)');
+  }
+
   const contact = await ContactService.createContact({ 
     email, 
     name, 
@@ -47,10 +77,19 @@ export const bulkUpload = asyncHandler(async (req: any, res: Response) => {
 
   const processBatch = async (batch: any[]) => {
     if (batch.length > 0) {
-      await Contact.insertMany(batch, { ordered: false }).catch(err => {
-        // Ignore duplicate key errors for emails
-      });
-      insertedCount += batch.length;
+      // Validate emails and MX records in parallel
+      const validationResults = await Promise.all(
+        batch.map(contact => validateEmailAndMX(contact.email))
+      );
+      
+      const validBatch = batch.filter((_, index) => validationResults[index]);
+      
+      if (validBatch.length > 0) {
+        await Contact.insertMany(validBatch, { ordered: false }).catch(err => {
+          // Ignore duplicate key errors for emails
+        });
+        insertedCount += validBatch.length;
+      }
     }
   };
 
